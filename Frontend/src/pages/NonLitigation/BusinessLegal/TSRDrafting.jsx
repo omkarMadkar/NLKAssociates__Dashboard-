@@ -194,6 +194,50 @@ NLK Associates — Advocates & Legal Consultants`;
     if (window.confirm('Delete this draft?')) setDrafts(p => p.filter(d => d._id !== id));
   };
 
+  const handleExportPDF = (contentToExport) => {
+    const text = contentToExport || draftContent;
+    if (!text.trim()) {
+      alert('No content to export.');
+      return;
+    }
+    
+    const win = window.open('', '_blank');
+    win.document.write(`
+      <html>
+      <head>
+        <title>NLK TSR Report</title>
+        <style>
+          body { font-family: 'Times New Roman', serif; padding: 40px; line-height: 1.6; color: #000; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .header h1 { color: #1e3c72; margin-bottom: 5px; font-size: 24px; }
+          .header p { margin-top: 0; font-size: 14px; font-weight: bold; }
+          .content { white-space: pre-wrap; font-size: 14px; }
+          .footer { margin-top: 60px; text-align: center; font-size: 11px; color: #64748b; }
+          @media print {
+            body { padding: 0; }
+            button { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>NLK LAW ASSOCIATES</h1>
+          <p>Advocates & Legal Consultants</p>
+        </div>
+        <div class="content">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+        <div class="footer">
+          <p>This is a computer-generated document. No signature required.</p>
+          <p>Developed by CALYONIX</p>
+        </div>
+        <div style="text-align: center; margin-top: 30px;">
+          <button onclick="window.print()" style="padding: 10px 20px; background: #1e3c72; color: white; border: none; border-radius: 4px; cursor: pointer;">Print / Save as PDF</button>
+        </div>
+      </body>
+      </html>
+    `);
+    win.document.close();
+  };
+
   const inputStyle = { border: '1px solid var(--border)', padding: '10px 14px', borderRadius: 8, fontSize: 14, outline: 'none', background: 'white', width: '100%', boxSizing: 'border-box' };
 
   return (
@@ -276,7 +320,7 @@ NLK Associates — Advocates & Legal Consultants`;
               style={{ background: submitting ? '#fbbf24' : '#d97706', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
               📤 {submitting ? 'Submitting...' : 'Submit for Approval'}
             </button>
-            <button onClick={() => alert('📄 PDF Export is a Phase 2 feature.')}
+            <button onClick={() => handleExportPDF(draftContent)}
               style={{ background: '#0e7490', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
               📄 Export PDF
             </button>
@@ -319,7 +363,7 @@ NLK Associates — Advocates & Legal Consultants`;
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => { setDraftContent(d.content); setSelectedCase(''); }} style={{ background: '#f1f5f9', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Edit">✏️</button>
                         <button onClick={() => alert(d.content)} style={{ background: '#dbeafe', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Preview">👁</button>
-                        <button onClick={() => alert('📄 PDF Export — Phase 2')} style={{ background: '#fef3c7', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Export PDF">📄</button>
+                        <button onClick={() => handleExportPDF(d.content)} style={{ background: '#fef3c7', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Export PDF">📄</button>
                         <button onClick={() => handleDeleteDraft(d._id)} style={{ background: '#fee2e2', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Delete">🗑</button>
                       </div>
                     </td>
