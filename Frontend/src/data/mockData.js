@@ -274,3 +274,155 @@ export const MOCK_TSR_BY_CASE = {
     createdAt: '2026-05-10T14:00:00Z',
   },
 };
+
+// ============================================================
+// BUSINESS LEGAL MODULE — Mock Data
+// ============================================================
+
+// ---- TSR INITIATION RECORDS ----
+export const MOCK_TSR_INITIATIONS = [
+  {
+    _id: 'init001',
+    appId: '77000234182',
+    author: 'Narayan',
+    branch: 'Main',
+    initiationDate: '2026-05-01',
+    applicant: 'Swapan Mandol',
+    coApplicant: 'Ritu Mandol',
+    transactionType: 'Home Loan',
+    propertyDetails: 'Plot No. 45, Baner Road, Pune — 2BHK Flat, 1200 Sq.Ft.',
+    executiveMobile: '9812345678',
+    executiveEmail: 'exec1@nlkassociates.com',
+    status: 'initiated',
+    createdAt: '2026-05-01T09:00:00Z',
+  },
+  {
+    _id: 'init002',
+    appId: '77000234199',
+    author: 'Narayan',
+    branch: 'Pune',
+    initiationDate: '2026-05-05',
+    applicant: 'Ramesh Patil',
+    coApplicant: '',
+    transactionType: 'Loan Against Property',
+    propertyDetails: 'Gat No. 78, Dindori Road, Nashik — Agricultural Land, 2400 Sq.Ft.',
+    executiveMobile: '9876543211',
+    executiveEmail: 'exec2@nlkassociates.com',
+    status: 'in_progress',
+    createdAt: '2026-05-05T10:30:00Z',
+  },
+  {
+    _id: 'init003',
+    appId: '77000234215',
+    author: 'Narayan',
+    branch: 'Mumbai',
+    initiationDate: '2026-05-10',
+    applicant: 'Kavita Shetty',
+    coApplicant: 'Arun Shetty',
+    transactionType: 'Home Loan',
+    propertyDetails: 'CTS No. 1234, Bandra (W), Mumbai — Row House, 1800 Sq.Ft.',
+    executiveMobile: '9765432100',
+    executiveEmail: 'exec3@nlkassociates.com',
+    status: 'completed',
+    createdAt: '2026-05-10T08:00:00Z',
+  },
+  {
+    _id: 'init004',
+    appId: '77000234230',
+    author: 'Narayan',
+    branch: 'Main',
+    initiationDate: '2026-05-15',
+    applicant: 'Dilip Waghmare',
+    coApplicant: '',
+    transactionType: 'Commercial Loan',
+    propertyDetails: 'Survey No. 112, Hingna Road, Nagpur — Shop, 600 Sq.Ft.',
+    executiveMobile: '9901234567',
+    executiveEmail: 'exec4@nlkassociates.com',
+    status: 'initiated',
+    createdAt: '2026-05-15T11:00:00Z',
+  },
+];
+
+// ---- TSR DRAFTS (Business Legal) ----
+export const MOCK_TSR_DRAFTS = [
+  {
+    _id: 'draft001',
+    tsrRefNo: 'TSR001',
+    appId: '77000234182',
+    applicant: 'Swapan Mandol',
+    templateType: 'Standard TSR Template',
+    status: 'draft',
+    createdAt: '2026-05-20T09:00:00Z',
+    updatedAt: '2026-05-20T09:00:00Z',
+    content: `TITLE SEARCH REPORT — STANDARD TEMPLATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TSR Reference No : TSR001
+Application No   : 77000234182
+Applicant Name   : Swapan Mandol
+Co-Applicant     : Ritu Mandol
+Branch           : Main
+Date             : 20-May-2026
+Prepared By      : NLK Associates
+
+PROPERTY DESCRIPTION:
+Plot No. 45, Baner Road, Pune — 2BHK Flat, 1200 Sq.Ft.
+
+OWNERSHIP CHAIN:
+• 2005 – Original Purchase by Shri. Vijay Desai (Sale Deed)
+• 2019 – Transferred to Swapan Mandol (Sale Deed, Regn. No. 44521)
+
+ENCUMBRANCES: None found.
+LEGAL STATUS: CLEAR and MARKETABLE.
+
+NLK Associates — Advocates & Legal Consultants`,
+  },
+  {
+    _id: 'draft002',
+    tsrRefNo: 'TSR002',
+    appId: '77000234199',
+    applicant: 'Ramesh Patil',
+    templateType: 'Residential TSR Template',
+    status: 'submitted',
+    createdAt: '2026-05-18T11:00:00Z',
+    updatedAt: '2026-05-19T14:00:00Z',
+    content: `TITLE SEARCH REPORT — RESIDENTIAL TEMPLATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TSR Reference No : TSR002
+Application No   : 77000234199
+Applicant Name   : Ramesh Patil
+Branch           : Pune
+Date             : 18-May-2026
+
+PROPERTY: Gat No. 78, Dindori Road, Nashik
+TITLE: CLEAR. Suitable for mortgage.
+
+NLK Associates — Advocates & Legal Consultants`,
+  },
+  {
+    _id: 'draft003',
+    tsrRefNo: 'TSR003',
+    appId: '77000234215',
+    applicant: 'Kavita Shetty',
+    templateType: 'Commercial TSR Template',
+    status: 'approved',
+    createdAt: '2026-05-12T09:00:00Z',
+    updatedAt: '2026-05-14T16:00:00Z',
+    content: `TITLE SEARCH REPORT — COMMERCIAL TEMPLATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TSR Reference No : TSR003
+Application No   : 77000234215
+Applicant Name   : Kavita Shetty
+Co-Applicant     : Arun Shetty
+Branch           : Mumbai
+Date             : 12-May-2026
+
+PROPERTY: CTS No. 1234, Bandra (W), Mumbai
+TITLE: CLEAR and MARKETABLE. Approved for mortgage.
+
+NLK Associates — Advocates & Legal Consultants`,
+  },
+];
+

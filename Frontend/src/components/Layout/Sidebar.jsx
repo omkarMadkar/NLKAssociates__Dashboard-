@@ -7,6 +7,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const navigate = useNavigate();
   const role = localStorage.getItem('role');
   const [nlOpen, setNlOpen] = useState(true);
+  const [blOpen, setBlOpen] = useState(true);
 
   const NAV = [
     { label: 'Dashboard', icon: '⊞', path: '/dashboard' },
@@ -15,6 +16,13 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     {
       label: 'Non-Litigation', icon: '🏛️', path: null,
       children: [
+        {
+          label: 'Business Legal', icon: '📂', path: null, isGroup: true,
+          children: [
+            { label: 'TSR Initiation', path: '/non-litigation/business-legal/tsr-initiation', icon: '📋' },
+            { label: 'TSR Drafting', path: '/non-litigation/business-legal/tsr-drafting', icon: '✍️' },
+          ]
+        },
         { label: 'ICICI Bank', path: '/non-litigation/icici' },
         { label: 'Aditya Birla', path: '/non-litigation/aditya-birla' },
         { label: 'Bajaj', path: '/non-litigation/bajaj' },
@@ -71,16 +79,45 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                   <span style={{ fontSize: 16 }}>{item.icon}</span>
                   {!collapsed && <><span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span><span>{nlOpen ? '▾' : '▸'}</span></>}
                 </button>
-                {nlOpen && !collapsed && item.children.map(child => (
-                  <Link key={child.path} to={child.path}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px 10px 44px',
-                      color: isActive(child.path) ? 'var(--gold)' : 'rgba(255,255,255,0.55)',
-                      textDecoration: 'none', fontSize: 13, borderLeft: isActive(child.path) ? '3px solid var(--gold)' : '3px solid transparent',
-                      background: isActive(child.path) ? 'rgba(201,168,76,0.08)' : 'transparent',
-                      transition: 'all 0.15s ease' }}>
-                    {child.label}
-                  </Link>
-                ))}
+                {nlOpen && !collapsed && item.children.map(child => {
+                  if (child.isGroup) {
+                    return (
+                      <div key={child.label}>
+                        {/* Business Legal sub-group header */}
+                        <button onClick={() => setBlOpen(!blOpen)}
+                          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: 'none', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 10, padding: '9px 20px 9px 44px',
+                            color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
+                          <span>{child.icon}</span>
+                          <span style={{ flex: 1, textAlign: 'left', fontWeight: 600, letterSpacing: 0.3 }}>{child.label}</span>
+                          <span style={{ fontSize: 10 }}>{blOpen ? '▾' : '▸'}</span>
+                        </button>
+                        {blOpen && child.children.map(sub => (
+                          <Link key={sub.path} to={sub.path}
+                            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 20px 9px 64px',
+                              color: isActive(sub.path) ? 'var(--gold)' : 'rgba(255,255,255,0.5)',
+                              textDecoration: 'none', fontSize: 12,
+                              borderLeft: isActive(sub.path) ? '3px solid var(--gold)' : '3px solid transparent',
+                              background: isActive(sub.path) ? 'rgba(201,168,76,0.08)' : 'transparent',
+                              transition: 'all 0.15s ease' }}>
+                            <span style={{ fontSize: 13 }}>{sub.icon}</span>
+                            {sub.label}
+                          </Link>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return (
+                    <Link key={child.path} to={child.path}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px 10px 44px',
+                        color: isActive(child.path) ? 'var(--gold)' : 'rgba(255,255,255,0.55)',
+                        textDecoration: 'none', fontSize: 13, borderLeft: isActive(child.path) ? '3px solid var(--gold)' : '3px solid transparent',
+                        background: isActive(child.path) ? 'rgba(201,168,76,0.08)' : 'transparent',
+                        transition: 'all 0.15s ease' }}>
+                      {child.label}
+                    </Link>
+                  );
+                })}
               </div>
             );
           }

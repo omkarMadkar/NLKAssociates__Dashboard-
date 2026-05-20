@@ -11,6 +11,9 @@ import CaseList from './pages/Cases/CaseList';
 import Approvals from './pages/Approvals';
 import SearchPage from './pages/SearchPage';
 import Reports from './pages/Reports';
+// Business Legal Module
+import TSRInitiation from './pages/NonLitigation/BusinessLegal/TSRInitiation';
+import TSRDrafting from './pages/NonLitigation/BusinessLegal/TSRDrafting';
 
 // DEMO MODE: Set role and a fake token in localStorage on app boot
 function DemoBootstrap() {
@@ -40,6 +43,9 @@ function App() {
           <Route path="/approvals" element={<Approvals />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/reports" element={<Reports />} />
+          {/* Business Legal Routes */}
+          <Route path="/non-litigation/business-legal/tsr-initiation" element={<TSRInitiation />} />
+          <Route path="/non-litigation/business-legal/tsr-drafting" element={<TSRDrafting />} />
         </Route>
       </Routes>
     </BrowserRouter>
