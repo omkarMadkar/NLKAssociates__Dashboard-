@@ -37,7 +37,8 @@ export default function SearchPage() {
         const qBank = bank ? `&bank=${bank}` : '';
         const qStatus = status ? `&status=${status}` : '';
         const { default: axios } = await import('axios');
-        const res = await axios.get(`http://localhost:5555/api/cases?search=${query}${qBank}${qStatus}`, { headers: { Authorization: `Bearer ${token}` } });
+        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5555';
+        const res = await axios.get(`${backendUrl}/api/cases?search=${query}${qBank}${qStatus}`, { headers: { Authorization: `Bearer ${token}` } });
         setResults(res.data.cases || []);
         setLoading(false);
       } catch (err) {

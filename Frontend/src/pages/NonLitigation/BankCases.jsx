@@ -38,7 +38,8 @@ export default function BankCases() {
     const fetchCases = async () => {
       try {
         const { default: axios } = await import('axios');
-        const res = await axios.get(`http://localhost:5555/api/cases?bank=${encodeURIComponent(meta.name)}`, { headers: { Authorization: `Bearer ${token}` } });
+        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5555';
+        const res = await axios.get(`${backendUrl}/api/cases?bank=${encodeURIComponent(meta.name)}`, { headers: { Authorization: `Bearer ${token}` } });
         setCases(res.data.cases || []);
       } catch (err) { console.error(err); }
       setLoading(false);

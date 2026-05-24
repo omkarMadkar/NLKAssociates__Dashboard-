@@ -226,7 +226,7 @@ export default function CaseDetail() {
                       <span style={{ background: 'var(--bg)', padding: '2px 6px', borderRadius: 4 }}>{d.docType}</span> • {(d.fileSize / 1024).toFixed(1)} KB
                     </div>
                   </div>
-                  <a href={`http://localhost:5555/uploads/${d.filePath.split('/').pop().split('\\').pop()}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Download</a>
+                  <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:5555'}/uploads/${d.filePath.split('/').pop().split('\\').pop()}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Download</a>
                 </div>
               ))}
             </div>

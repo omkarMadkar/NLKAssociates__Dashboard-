@@ -17,7 +17,8 @@ export default function Approvals() {
       if (role !== 'senior') return;
       try {
         const { default: axios } = await import('axios');
-        const res = await axios.get('http://localhost:5555/api/approvals/pending', { headers: { Authorization: `Bearer ${token}` } });
+        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5555';
+        const res = await axios.get(`${backendUrl}/api/approvals/pending`, { headers: { Authorization: `Bearer ${token}` } });
         setPending(res.data.pending || []);
       } catch (err) { console.error(err); }
       setLoading(false);

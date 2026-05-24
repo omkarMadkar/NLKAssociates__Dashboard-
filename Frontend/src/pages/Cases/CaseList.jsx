@@ -29,7 +29,8 @@ export default function CaseList() {
     const fetchCases = async () => {
       try {
         const { default: axios } = await import('axios');
-        const res = await axios.get(`http://localhost:5555/api/cases`, { headers: { Authorization: `Bearer ${token}` } });
+        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5555';
+        const res = await axios.get(`${backendUrl}/api/cases`, { headers: { Authorization: `Bearer ${token}` } });
         setCases(res.data.cases || []);
       } catch (e) { console.error(e); }
       setLoading(false);
