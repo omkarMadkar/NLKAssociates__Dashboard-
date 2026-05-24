@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DEMO_MODE, MOCK_CASES, MOCK_DOCUMENTS, MOCK_TSR_BY_CASE } from '../../data/mockData';
+import API from '../../api/axios';
 
 const STATUS_STYLES = {
   draft:     { bg: '#f1f5f9', color: '#475569', label: 'Draft' },
@@ -33,13 +34,33 @@ export default function TSRGenerator() {
       }
       return;
     }
+
+    const token = localStorage.getItem('token');
+    const fetchData = async () => {
+      try {
+        const [caseRes, docsRes, tsrRes] = await Promise.all([
+          API.get(`/cases/${caseId}`, { headers: { Authorization: `Bearer ${token}` } }),
+          API.get(`/documents/${caseId}`, { headers: { Authorization: `Bearer ${token}` } }),
+          API.get(`/tsr/${caseId}`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        setCaseData(caseRes.data.case);
+        setDocs(docsRes.data.documents || []);
+        if (tsrRes.data.success && tsrRes.data.tsr) {
+          setTsr(tsrRes.data.tsr);
+          setDraftContent(tsrRes.data.tsr.draftContent);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchData();
   }, [caseId]);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setGenerating(true);
-    // DEMO: simulate AI generation with a realistic mock TSR
-    setTimeout(() => {
-      const mockDraft = `TITLE SEARCH REPORT
+    if (DEMO_MODE) {
+      setTimeout(() => {
+        const mockDraft = `TITLE SEARCH REPORT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. REPORT PARTICULARS
@@ -81,30 +102,91 @@ export default function TSRGenerator() {
 Signed & Sealed,
 NLK Associates — Advocates & Legal Consultants
 `;
-      const newTsr = { _id: `tsr_demo_${Date.now()}`, status: 'draft', version: 1, draftContent: mockDraft };
-      setTsr(newTsr);
-      setDraftContent(mockDraft);
-      setGenerating(false);
-    }, 2500);
+        const newTsr = { _id: `tsr_demo_${Date.now()}`, status: 'draft', version: 1, draftContent: mockDraft };
+        setTsr(newTsr);
+        setDraftContent(mockDraft);
+        setGenerating(false);
+      }, 2500);
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await API.post(`/tsr/generate/${caseId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success && res.data.tsr) {
+        setTsr(res.data.tsr);
+        setDraftContent(res.data.tsr.draftContent);
+        alert('✨ AI Draft generated successfully!');
+      } else {
+        alert(`❌ AI generation failed: ${res.data.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`❌ Error generating AI draft: ${err.response?.data?.message || err.message}`);
+    }
+    setGenerating(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
-      setTsr(prev => ({ ...prev, draftContent }));
-      setSaving(false);
-      alert('💾 Draft saved! (Demo mode)');
-    }, 800);
+    if (DEMO_MODE) {
+      setTimeout(() => {
+        setTsr(prev => ({ ...prev, draftContent }));
+        setSaving(false);
+        alert('💾 Draft saved! (Demo mode)');
+      }, 800);
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await API.put(`/tsr/${tsr._id}`, { draftContent }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success && res.data.tsr) {
+        setTsr(res.data.tsr);
+        alert('💾 Draft saved successfully!');
+      } else {
+        alert(`❌ Failed to save draft: ${res.data.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`❌ Error saving draft: ${err.response?.data?.message || err.message}`);
+    }
+    setSaving(false);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmitting(true);
-    setTimeout(() => {
-      setTsr(prev => ({ ...prev, status: 'submitted' }));
-      setSubmitting(false);
-      alert('📤 Submitted to NLK Sir successfully! (Demo mode)');
-      navigate(`/cases/${caseId}`);
-    }, 1000);
+    if (DEMO_MODE) {
+      setTimeout(() => {
+        setTsr(prev => ({ ...prev, status: 'submitted' }));
+        setSubmitting(false);
+        alert('📤 Submitted to NLK Sir successfully! (Demo mode)');
+        navigate(`/cases/${caseId}`);
+      }, 1000);
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await API.post(`/tsr/${tsr._id}/submit`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success && res.data.tsr) {
+        setTsr(res.data.tsr);
+        alert('📤 Submitted to NLK Sir successfully!');
+        navigate(`/cases/${caseId}`);
+      } else {
+        alert(`❌ Failed to submit: ${res.data.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`❌ Error submitting TSR: ${err.response?.data?.message || err.message}`);
+    }
+    setSubmitting(false);
   };
 
   if (!caseData) return <div style={{ padding: 40, color: 'var(--muted)' }}>Loading...</div>;

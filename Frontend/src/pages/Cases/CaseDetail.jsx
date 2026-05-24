@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DEMO_MODE, MOCK_CASES, MOCK_DOCUMENTS } from '../../data/mockData';
+import API from '../../api/axios';
 
 const STATUS_STYLES = {
   created:        { bg: '#f1f5f9', color: '#475569', label: 'Created' },
@@ -42,35 +43,85 @@ export default function CaseDetail() {
       setLoading(false);
       return;
     }
-    // --- REAL API (commented out for demo) ---
-    // const token = localStorage.getItem('token');
-    // const fetchCase = async () => {
-    //   try {
-    //     const [caseRes, docsRes] = await Promise.all([
-    //       API.get(`/cases/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
-    //       API.get(`/documents/${id}`, { headers: { Authorization: `Bearer ${token}` } })
-    //     ]);
-    //     setCaseData(caseRes.data.case);
-    //     setDocs(docsRes.data.documents);
-    //   } catch (err) { console.error(err); }
-    //   setLoading(false);
-    // };
-    // fetchCase();
+    // --- REAL API ---
+    const token = localStorage.getItem('token');
+    const fetchCase = async () => {
+      try {
+        const [caseRes, docsRes] = await Promise.all([
+          API.get(`/cases/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
+          API.get(`/documents/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        setCaseData(caseRes.data.case);
+        setDocs(docsRes.data.documents || []);
+      } catch (err) { console.error(err); }
+      setLoading(false);
+    };
+    fetchCase();
   }, [id]);
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!fileToUpload) return;
-    // DEMO: simulate upload
-    const newDoc = {
-      _id: `demo_${Date.now()}`,
-      originalName: fileToUpload.name,
-      docType,
-      fileSize: fileToUpload.size,
-      filePath: '',
-    };
-    setDocs(prev => [...prev, newDoc]);
-    setFileToUpload(null);
-    alert(`✅ "${fileToUpload.name}" uploaded successfully! (Demo mode)`);
+    if (DEMO_MODE) {
+      const newDoc = {
+        _id: `demo_${Date.now()}`,
+        originalName: fileToUpload.name,
+        docType,
+        fileSize: fileToUpload.size,
+        filePath: '',
+      };
+      setDocs(prev => [...prev, newDoc]);
+      setFileToUpload(null);
+      alert(`✅ "${fileToUpload.name}" uploaded successfully! (Demo mode)`);
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('file', fileToUpload);
+    formData.append('docType', docType);
+
+    try {
+      const res = await API.post(`/documents/upload/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (res.data.success) {
+        setDocs(prev => [res.data.document, ...prev]);
+        setFileToUpload(null);
+        alert(`✅ "${fileToUpload.name}" uploaded successfully!`);
+      } else {
+        alert(`❌ Upload failed: ${res.data.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`❌ Error uploading file: ${err.response?.data?.message || err.message}`);
+    }
+  };
+
+  const handleStatusChange = async (e) => {
+    const newStatus = e.target.value;
+    if (DEMO_MODE) {
+      setCaseData(prev => ({ ...prev, status: newStatus }));
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await API.put(`/cases/${id}/status`, { status: newStatus }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setCaseData(prev => ({ ...prev, status: newStatus }));
+        alert(`✅ Case status updated to ${STATUS_STYLES[newStatus].label}`);
+      } else {
+        alert(`❌ Failed to update status: ${res.data.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`❌ Error updating status: ${err.response?.data?.message || err.message}`);
+    }
   };
 
   if (loading) return <div style={{ padding: 40, color: 'var(--muted)' }}>Loading...</div>;
@@ -94,7 +145,7 @@ export default function CaseDetail() {
           </div>
         </div>
         {role === 'admin' && (
-          <select value={caseData.status} onChange={() => {}}
+          <select value={caseData.status} onChange={handleStatusChange}
             style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border)', outline: 'none', background: 'var(--bg)', fontWeight: 600 }}>
             {STATUS_STEPS.map(s => <option key={s} value={s}>{STATUS_STYLES[s].label}</option>)}
           </select>
@@ -175,7 +226,7 @@ export default function CaseDetail() {
                       <span style={{ background: 'var(--bg)', padding: '2px 6px', borderRadius: 4 }}>{d.docType}</span> • {(d.fileSize / 1024).toFixed(1)} KB
                     </div>
                   </div>
-                  <button onClick={() => alert('📄 Download available in full deployment.')} style={{ color: 'var(--accent)', background: 'none', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Download</button>
+                  <a href={`http://localhost:5555/uploads/${d.filePath.split('/').pop().split('\\').pop()}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Download</a>
                 </div>
               ))}
             </div>

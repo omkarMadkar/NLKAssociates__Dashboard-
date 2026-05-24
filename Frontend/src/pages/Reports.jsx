@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { DEMO_MODE, MOCK_CASES } from '../data/mockData';
+import API from '../api/axios';
 
 function StatusBadge({ status }) {
   const styles = {
@@ -12,17 +13,67 @@ function StatusBadge({ status }) {
 }
 
 export default function Reports() {
-  const [approvedCases, setApprovedCases] = useState(
-    DEMO_MODE ? MOCK_CASES.filter(c => c.status === 'approved') : []
-  );
-  const [sharedCases] = useState(
-    DEMO_MODE ? MOCK_CASES.filter(c => c.status === 'shared_to_bank') : []
-  );
+  const [approvedCases, setApprovedCases] = useState([]);
+  const [sharedCases, setSharedCases] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleShare = (id) => {
-    setApprovedCases(prev => prev.filter(c => c._id !== id));
-    alert('✅ Case marked as shared to bank! (Demo mode)');
+  useEffect(() => {
+    if (DEMO_MODE) {
+      setApprovedCases(MOCK_CASES.filter(c => c.status === 'approved'));
+      setSharedCases(MOCK_CASES.filter(c => c.status === 'shared_to_bank'));
+      setLoading(false);
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    const fetchReports = async () => {
+      try {
+        const [appRes, shRes] = await Promise.all([
+          API.get('/cases?status=approved', { headers: { Authorization: `Bearer ${token}` } }),
+          API.get('/cases?status=shared_to_bank', { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        setApprovedCases(appRes.data.cases || []);
+        setSharedCases(shRes.data.cases || []);
+      } catch (err) {
+        console.error(err);
+      }
+      setLoading(false);
+    };
+    fetchReports();
+  }, []);
+
+  const handleShare = async (id) => {
+    if (DEMO_MODE) {
+      setApprovedCases(prev => prev.filter(c => c._id !== id));
+      alert('✅ Case marked as shared to bank! (Demo mode)');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await API.put(`/cases/${id}/status`, { status: 'shared_to_bank' }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setApprovedCases(prev => prev.filter(c => c._id !== id));
+        const sharedCase = approvedCases.find(c => c._id === id);
+        if (sharedCase) {
+          setSharedCases(prev => [
+            { ...sharedCase, status: 'shared_to_bank', updatedAt: new Date().toISOString() },
+            ...prev
+          ]);
+        }
+        alert('✅ Case marked as shared to bank!');
+      } else {
+        alert(`❌ Failed to share: ${res.data.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`❌ Error sharing case: ${err.response?.data?.message || err.message}`);
+    }
   };
+
+  if (loading) return <div style={{ padding: 40, color: 'var(--muted)' }}>Loading...</div>;
 
   return (
     <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>

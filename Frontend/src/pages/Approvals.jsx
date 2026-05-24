@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DEMO_MODE, MOCK_TSR_PENDING } from '../data/mockData';
+import API from '../api/axios';
 
 export default function Approvals() {
   const role = localStorage.getItem('role');
@@ -10,25 +11,18 @@ export default function Approvals() {
   const [actionDone, setActionDone] = useState({});
 
   useEffect(() => {
-    if (DEMO_MODE) {
-      // Simulate a brief loading state
-      setTimeout(() => {
-        setPending(MOCK_TSR_PENDING);
-        setLoading(false);
-      }, 400);
-      return;
-    }
-    // --- REAL API (commented out for demo) ---
-    // const token = localStorage.getItem('token');
-    // const fetchPending = async () => {
-    //   if (role !== 'senior') return;
-    //   try {
-    //     const res = await API.get('/approvals/pending', { headers: { Authorization: `Bearer ${token}` } });
-    //     setPending(res.data.pending);
-    //   } catch (err) { console.error(err); }
-    //   setLoading(false);
-    // };
-    // fetchPending();
+    // --- REAL API ---
+    const token = localStorage.getItem('token');
+    const fetchPending = async () => {
+      if (role !== 'senior') return;
+      try {
+        const { default: axios } = await import('axios');
+        const res = await axios.get('http://localhost:5555/api/approvals/pending', { headers: { Authorization: `Bearer ${token}` } });
+        setPending(res.data.pending || []);
+      } catch (err) { console.error(err); }
+      setLoading(false);
+    };
+    fetchPending();
   }, []);
 
   if (role !== 'senior') {
@@ -41,11 +35,32 @@ export default function Approvals() {
     );
   }
 
-  const handleAction = (id, action) => {
-    // DEMO: just mark as done locally
-    setActionDone(prev => ({ ...prev, [id]: action }));
-    setExpandedId(null);
-    setNotes('');
+  const handleAction = async (id, action) => {
+    if (DEMO_MODE) {
+      setActionDone(prev => ({ ...prev, [id]: action }));
+      setExpandedId(null);
+      setNotes('');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    try {
+      const endpoint = action === 'approve' ? `/approvals/${id}/approve` : `/approvals/${id}/reject`;
+      const res = await API.post(endpoint, { notes }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setActionDone(prev => ({ ...prev, [id]: action }));
+        setExpandedId(null);
+        setNotes('');
+        alert(`✅ TSR successfully ${action === 'approve' ? 'approved' : 'rejected'}`);
+      } else {
+        alert(`❌ Action failed: ${res.data.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`❌ Error: ${err.response?.data?.message || err.message}`);
+    }
   };
 
   const activePending = pending.filter(item => !actionDone[item._id]);

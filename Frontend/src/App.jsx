@@ -1,6 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import { DEMO_MODE, DEMO_ROLE } from './data/mockData';
 import MainLayout from './components/Layout/MainLayout';
 import Dashboard from './pages/Dashboard';
 import BankCases from './pages/NonLitigation/BankCases';
@@ -11,29 +9,26 @@ import CaseList from './pages/Cases/CaseList';
 import Approvals from './pages/Approvals';
 import SearchPage from './pages/SearchPage';
 import Reports from './pages/Reports';
-// Business Legal Module
+import Login from './pages/Login';
 import TSRInitiation from './pages/NonLitigation/BusinessLegal/TSRInitiation';
 import TSRDrafting from './pages/NonLitigation/BusinessLegal/TSRDrafting';
 
-// DEMO MODE: Set role and a fake token in localStorage on app boot
-function DemoBootstrap() {
-  useEffect(() => {
-    if (DEMO_MODE) {
-      localStorage.setItem('role', DEMO_ROLE);
-      localStorage.setItem('token', 'demo-token-no-backend');
-    }
-  }, []);
-  return null;
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 }
 
 function App() {
   return (
     <BrowserRouter>
-      <DemoBootstrap />
       <Routes>
-        {/* In DEMO MODE: redirect / directly to /dashboard — no login page */}
+        <Route path="/login" element={<Login />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route element={<MainLayout />}>
+        
+        <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/cases" element={<CaseList />} />
           <Route path="/cases/new" element={<CaseCreate />} />

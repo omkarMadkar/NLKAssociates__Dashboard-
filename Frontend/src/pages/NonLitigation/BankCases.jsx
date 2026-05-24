@@ -33,23 +33,17 @@ export default function BankCases() {
   const role = localStorage.getItem('role');
 
   useEffect(() => {
-    if (DEMO_MODE) {
-      const filtered = MOCK_CASES.filter(c => c.bank === meta.name);
-      setCases(filtered);
+    // --- REAL API ---
+    const token = localStorage.getItem('token');
+    const fetchCases = async () => {
+      try {
+        const { default: axios } = await import('axios');
+        const res = await axios.get(`http://localhost:5555/api/cases?bank=${encodeURIComponent(meta.name)}`, { headers: { Authorization: `Bearer ${token}` } });
+        setCases(res.data.cases || []);
+      } catch (err) { console.error(err); }
       setLoading(false);
-      return;
-    }
-    // --- REAL API (commented out for demo) ---
-    // const fetchCases = async () => {
-    //   setLoading(true);
-    //   try {
-    //     const token = localStorage.getItem('token');
-    //     const res = await API.get(`/cases?bank=${meta.name}`, { headers: { Authorization: `Bearer ${token}` } });
-    //     setCases(res.data.cases || []);
-    //   } catch (e) { console.error(e); }
-    //   setLoading(false);
-    // };
-    // fetchCases();
+    };
+    fetchCases();
   }, [bank]);
 
   const filtered = filter === 'all' ? cases : cases.filter(c => c.status === filter);

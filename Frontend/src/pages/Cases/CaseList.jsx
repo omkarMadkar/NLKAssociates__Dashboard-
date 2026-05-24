@@ -24,21 +24,17 @@ export default function CaseList() {
   const role = localStorage.getItem('role');
 
   useEffect(() => {
-    if (DEMO_MODE) {
-      setCases(MOCK_CASES);
+    // --- REAL API ---
+    const token = localStorage.getItem('token');
+    const fetchCases = async () => {
+      try {
+        const { default: axios } = await import('axios');
+        const res = await axios.get(`http://localhost:5555/api/cases`, { headers: { Authorization: `Bearer ${token}` } });
+        setCases(res.data.cases || []);
+      } catch (e) { console.error(e); }
       setLoading(false);
-      return;
-    }
-    // --- REAL API (commented out for demo) ---
-    // const token = localStorage.getItem('token');
-    // const fetchCases = async () => {
-    //   try {
-    //     const res = await API.get(`/cases`, { headers: { Authorization: `Bearer ${token}` } });
-    //     setCases(res.data.cases || []);
-    //   } catch (e) { console.error(e); }
-    //   setLoading(false);
-    // };
-    // fetchCases();
+    };
+    fetchCases();
   }, []);
 
   return (

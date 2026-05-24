@@ -3,7 +3,7 @@
 // All API calls are replaced with this static data
 // ============================================================
 
-export const DEMO_MODE = true;
+export const DEMO_MODE = false;
 
 export const DEMO_ROLE = 'senior'; // Logged in as Senior Advocate (NLK Sir)
 
@@ -425,4 +425,167 @@ TITLE: CLEAR and MARKETABLE. Approved for mortgage.
 NLK Associates — Advocates & Legal Consultants`,
   },
 ];
+
+export const MOCK_EXTRACTION_PROFILES = [
+  {
+    _id: 'mock_ext_1',
+    author: 'Advocate Anil',
+    appId: '77000244168',
+    refNo: 'IHFC/TSR/691/2026',
+    branch: 'Pune',
+    initiationDate: '2026-04-30',
+    applicant: 'Mr. Ramesh Kumar',
+    coApplicant: 'Mrs. Sunita Kumar',
+    existingOwner: 'Mr. Subhash Ganpat Sarak',
+    transactionType: 'Home Loan',
+    bankBranch: 'Hadapsar Branch, Pune',
+    municipalPropertyNo: 'P/M/83/01239000',
+    rccConstructionArea: '750 sq. ft.',
+    village: 'Uruli Devachi',
+    taluka: 'Haveli',
+    district: 'Pune',
+    municipalCouncil: 'Fursungi Municipal Council',
+    surveyNoDetails: 'Survey No. 237, Hissa No. 2A/43 admeasuring 100 sq. mtrs.',
+    boundaryEast: 'Property of Prabhakar Gaikwad',
+    boundaryWest: 'Property of Ghatkambale',
+    boundarySouth: 'Property bearing Survey No. 222',
+    boundaryNorth: 'Common Road',
+    executiveMobile: '9822456789',
+    executiveEmail: 'pune.exec@bank.com',
+    status: 'initiated',
+    createdAt: '2026-04-30T10:00:00Z',
+  },
+  {
+    _id: 'mock_ext_2',
+    author: 'Advocate Priya',
+    appId: '99000555331',
+    refNo: 'HDFC/TSR/102/2026',
+    branch: 'Mumbai',
+    initiationDate: '2026-05-15',
+    applicant: 'Mr. Vikram Singh',
+    coApplicant: 'Ms. Anjali Singh',
+    existingOwner: 'Mr. Rajesh Patel',
+    transactionType: 'LAP',
+    bankBranch: 'Andheri Branch, Mumbai',
+    municipalPropertyNo: 'M/W/12/55512000',
+    rccConstructionArea: '1200 sq. ft.',
+    village: 'Andheri',
+    taluka: 'Andheri',
+    district: 'Mumbai Suburban',
+    municipalCouncil: 'BMC',
+    surveyNoDetails: 'CTS No. 445, admeasuring 150 sq. mtrs.',
+    boundaryEast: 'Plot No 44',
+    boundaryWest: 'Public Garden',
+    boundarySouth: 'Main Road',
+    boundaryNorth: 'CTS No 446',
+    executiveMobile: '9123456780',
+    executiveEmail: 'andheri.exec@bank.com',
+    status: 'initiated',
+    createdAt: '2026-05-15T11:00:00Z',
+  }
+];
+
+// Advanced dynamic compiler for high-fidelity advocates' letterhead reports
+export function compileTSRReportContent(data) {
+  const applicant = data.applicant || 'Mr. Ganesh Sarak';
+  const coApplicant = data.coApplicant || 'Mr. Subhash Ganpat Sarak';
+  const owner = data.existingOwner || 'Mr. Subhash Ganpat Sarak';
+  const appId = data.appId || '77000244168';
+  const refNo = data.refNo || 'IHFC/TSR/691/2026';
+  const dateStr = data.initiationDate ? new Date(data.initiationDate).toLocaleDateString('en-IN') : '30.04.2026';
+  const transactionType = data.transactionType || 'LAP';
+  const bankBranch = data.bankBranch || 'Hadapsar Branch, Pune';
+  const village = data.village || 'Uruli Devachi';
+  const taluka = data.taluka || 'Haveli';
+  const district = data.district || 'Pune';
+  const municipalCouncil = data.municipalCouncil || 'Fursungi–Uruli Devachi Municipal Council';
+  
+  const east = data.boundaryEast || 'Property of Prabhakar Gaikwad';
+  const west = data.boundaryWest || 'Property of Ghatkambale';
+  const south = data.boundarySouth || 'Property bearing Survey No. 222';
+  const north = data.boundaryNorth || 'Common Road';
+  
+  const construction = data.rccConstructionArea || '750 sq. ft.';
+  const municipalNo = data.municipalPropertyNo || 'P/M/83/01239000';
+  const surveyDetails = data.surveyNoDetails || 'Survey No. 237, Hissa No. 2A/43 admeasuring 100 sq. mtrs.';
+
+  return `TITLE SEARCH REPORT & LEGAL SCRUTINY REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Ref. No. : ${refNo}                                 Date : ${dateStr}
+
+Application No.     : ${appId}
+Transaction Type    : ${transactionType}
+Applicant           : ${applicant}
+Co-Applicant        : ${coApplicant}
+Existing Owner      : ${owner}
+
+To,
+The Branch Manager,
+ICICI Home Finance Co. Ltd.,
+${bankBranch}.
+
+Subject: Legal Scrutiny Report pertaining to the file of ${applicant} and ${coApplicant}.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• PART I : PROPERTY DETAILS
+
+All that piece and parcel of property bearing land situated at Village – ${village}, Taluka – ${taluka}, District – ${district}, within the jurisdiction of Sub-Registrar ${taluka} and within the limits of ${municipalCouncil}, comprising:
+${surveyDetails}, aggregating to a total area of the subject property, together with R.C.C. construction standing thereon admeasuring about ${construction} on ground floor, bearing Property No. ${municipalNo}, and bounded as follows:
+
+On or towards East  : By ${east}
+On or towards West  : By ${west}
+On or towards South : By ${south}
+On or towards North : By ${north}
+
+Hereinafter, referred to as the "Subject Property".
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• PART II : LIST OF DOCUMENTS SCRUTINIZED
+
+1. Sale Deed, dated 11.11.2011 executed by Mr. Hanumant Anandrao Yadav in favour of Mr. Ravindra Ramdas Gaikwad, registered SRO Haveli No. 6 (Serial No. 11106/2011).
+2. Sale Deed, dated 25.09.2014 executed by Mr. Anand Appaso Chougule in favour of Mr. Ravindra Ramdas Gaikwad, registered SRO Haveli No. 6 (Serial No. 9684/2014).
+3. Sale Deed, dated 01.01.2026 executed by Mr. Ravindra Ramdas Gaikwad (via POA Mr. Subhash Ganpat Sarak) in favour of Mr. Subhash Ganpat Sarak, registered SRO Kedgaon (Serial No. 9186/2026).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• PART III : FLOW OF TITLE
+
+The land situated at ${village}, Taluka ${taluka}, District ${district}, was originally owned by Mr. Hanumant Anandrao Yadav. Via registered Conveyance Deed dated 11.11.2011 (Serial No. 11106/2011), he sold 00 H 01 R to Mr. Ravindra Ramdas Gaikwad.
+Further, land owned by Mr. Anand Appaso Chougule was sold to Mr. Ravindra Ramdas Gaikwad via Sale Deed dated 25.09.2014 (Serial No. 9684/2014).
+Subsequently, Mr. Ravindra Ramdas Gaikwad executed a Sale Deed dated 01.01.2026 (Serial No. 9186/2026) transferring the aggregated property of 150 sq. mtrs. with RCC construction to ${owner}.
+The revenue records have been mutated accordingly in the name of ${owner} vide Mutation Entry No. 30668. The properties are free from encumbrances.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• PART V : OTHER PROVISIONS & STATUTORY COMPLIANCE
+
+5.1  Urban Land Ceiling Applicable?         : No.
+5.2  Any Minor's claim/share?               : No.
+5.3  Affected by Tenancy regulations?        : No.
+5.4  Converted to Non-Agricultural (NA)?    : Yes.
+5.5  Up to date tax/land revenue paid?      : Yes, verified.
+5.6  Original documents scrutinized?        : Yes, photocopies matched with index.
+5.7  Required documents for mortgage?       : Yes, available.
+5.8  Previous owners transfer competency?   : Yes, competent.
+5.9  Proposed owners competency?            : Yes, competent.
+5.10 Tenure of the land                     : Tenure Class - 1.
+5.11 Is land Adivasi/Tribal?                : No.
+5.12 Joint Family Property?                 : No.
+5.13 SARFAESI Act applicable?               : Yes.
+5.14 Reservations / Acquisitions?           : No.
+5.15 Transferred by Power of Attorney?      : Yes.
+5.16 Search Report obtained & submitted?    : Yes.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• PART VI : CERTIFICATE OF TITLE
+
+I hereby certify that the subject property is clear, marketable, and owned and possessed by ${owner}, who derived valid title by virtue of registered deeds. He is competent to mortgage the property.
+
+NARAYAN L. KHAMKAR
+ADVOCATE & NOTARY`;
+}
 

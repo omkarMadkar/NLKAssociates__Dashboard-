@@ -12,6 +12,7 @@ const caseRoutes = require('./routes/caseRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const tsrRoutes = require('./routes/tsrRoutes');
+const tsrInitiationRoutes = require('./routes/tsrInitiationRoutes');
 const approvalRoutes = require('./routes/approvalRoutes');
 const path = require('path');
 const fs = require('fs');
@@ -46,6 +47,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/tsr', tsrRoutes);
+app.use('/api/tsr-initiation', tsrInitiationRoutes);
 app.use('/api/approvals', approvalRoutes);
 
 

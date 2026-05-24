@@ -49,6 +49,32 @@ const getCases = async (req, res) => {
     if (bank) filter.bank = bank;
     if (status) filter.status = status;
 
+    if (search) {
+      // Find matching clients
+      const clients = await Client.find({ name: { $regex: search, $options: 'i' } });
+      const clientIds = clients.map(c => c._id);
+
+      // Find matching properties
+      const properties = await Property.find({
+        $or: [
+          { address: { $regex: search, $options: 'i' } },
+          { surveyNo: { $regex: search, $options: 'i' } },
+          { village: { $regex: search, $options: 'i' } },
+          { taluka: { $regex: search, $options: 'i' } },
+          { district: { $regex: search, $options: 'i' } }
+        ]
+      });
+      const propertyIds = properties.map(p => p._id);
+
+      filter.$or = [
+        { caseId: { $regex: search, $options: 'i' } },
+        { bank: { $regex: search, $options: 'i' } },
+        { assignedTo: { $regex: search, $options: 'i' } },
+        { clientId: { $in: clientIds } },
+        { propertyId: { $in: propertyIds } }
+      ];
+    }
+
     let query = Case.find(filter).populate('clientId').populate('propertyId');
     if (sort === 'newest') query = query.sort({ createdAt: -1 });
     if (limit) query = query.limit(Number(limit));

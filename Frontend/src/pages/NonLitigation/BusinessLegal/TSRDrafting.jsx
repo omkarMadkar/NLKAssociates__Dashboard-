@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { MOCK_TSR_DRAFTS, MOCK_CASES } from '../../../data/mockData';
+import { useState, useEffect } from 'react';
+import API from '../../../api/axios';
+import { generateEnglishTSR, generateMarathiTSR } from '../../../utils/tsrTemplateEngine';
 
 const STATUS_STYLES = {
   draft:     { bg: '#f1f5f9', color: '#475569', label: 'Draft' },
@@ -13,146 +14,51 @@ function StatusBadge({ status }) {
   return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: s.bg, color: s.color }}>{s.label}</span>;
 }
 
-const TEMPLATES = {
-  standard: `TITLE SEARCH REPORT — STANDARD TEMPLATE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-TSR Reference No : [Auto-Generated]
-Application No   : [Select Case above]
-Prepared By      : NLK Associates
-Date             : ${new Date().toLocaleDateString('en-IN')}
-
-1. PROPERTY DESCRIPTION
-   Address         : 
-   Survey No.      : 
-   Village         : 
-   Taluka          : 
-   District        : 
-
-2. OWNERSHIP HISTORY (Last 30 Years)
-   • [Year] – [Owner Name] ([Deed Type])
-
-3. ENCUMBRANCES & CHARGES
-   • [None / Details]
-
-4. LEGAL OBSERVATIONS
-   • 
-
-5. TITLE OPINION
-   The title is CLEAR and MARKETABLE.
-
-Signed & Sealed,
-NLK Associates — Advocates & Legal Consultants`,
-
-  residential: `TITLE SEARCH REPORT — RESIDENTIAL TEMPLATE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-TSR Reference No : [Auto-Generated]
-Applicant        : [Select Case above]
-Property Type    : Residential
-Date             : ${new Date().toLocaleDateString('en-IN')}
-
-RESIDENTIAL PROPERTY DETAILS:
-   Address        : 
-   Built-up Area  : ___ Sq.Ft.
-   Floor          : 
-   Society Name   : 
-
-OWNERSHIP CHAIN:
-   • 
-
-ENCUMBRANCES: None found.
-
-LEGAL OPINION: CLEAR Title. Fit for residential mortgage.
-
-NLK Associates — Advocates & Legal Consultants`,
-
-  commercial: `TITLE SEARCH REPORT — COMMERCIAL TEMPLATE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-TSR Reference No : [Auto-Generated]
-Applicant        : [Select Case above]
-Property Type    : Commercial
-Date             : ${new Date().toLocaleDateString('en-IN')}
-
-COMMERCIAL PROPERTY DETAILS:
-   Address        : 
-   Carpet Area    : ___ Sq.Ft.
-   Usage          : Office / Shop / Warehouse
-   Zone           : 
-
-OWNERSHIP CHAIN:
-   • 
-
-ENCUMBRANCES: None found.
-
-LEGAL OPINION: CLEAR Title. Fit for commercial mortgage.
-
-NLK Associates — Advocates & Legal Consultants`,
-};
-
 export default function TSRDrafting() {
+  const [initiations, setInitiations] = useState([]);
   const [selectedCase, setSelectedCase] = useState('');
-  const [templateType, setTemplateType] = useState('Standard TSR Template');
+  const [templateType, setTemplateType] = useState('English Format');
   const [draftContent, setDraftContent] = useState('');
-  const [drafts, setDrafts] = useState(MOCK_TSR_DRAFTS);
+  const [drafts, setDrafts] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [counter, setCounter] = useState(drafts.length + 1);
 
-  const caseObj = MOCK_CASES.find(c => c._id === selectedCase);
-  const refNo = selectedCase ? `TSR${String(counter).padStart(3, '0')}` : '';
+  useEffect(() => {
+    fetchInitiations();
+    // fetchDrafts(); // In a real app we'd fetch saved drafts too
+  }, []);
 
-  const handleQuickTemplate = (type) => {
-    setDraftContent(TEMPLATES[type]);
-    setTemplateType(type === 'standard' ? 'Standard TSR Template' : type === 'residential' ? 'Residential TSR Template' : 'Commercial TSR Template');
+  const fetchInitiations = async () => {
+    try {
+      const { data } = await API.get('/tsr-initiation/list', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (data.success) {
+        setInitiations(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch TSR Initiations', err);
+    }
   };
 
+  const selectedOpt = initiations.find(i => i._id === selectedCase);
+  const refNo = selectedOpt?.refNo || 'Auto-generated';
+
   const handleGenerate = () => {
-    if (!selectedCase) { alert('Please select a case first.'); return; }
+    if (!selectedCase) { alert('Please select an initialized TSR first.'); return; }
     setGenerating(true);
+    
     setTimeout(() => {
-      const ai = `TITLE SEARCH REPORT — AI GENERATED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-TSR Reference No : ${refNo}
-Application No   : ${caseObj?.caseId}
-Applicant Name   : ${caseObj?.clientId?.name}
-Bank             : ${caseObj?.bank}
-Prepared By      : NLK Associates — AI Assisted
-Date             : ${new Date().toLocaleDateString('en-IN')}
-
-1. PROPERTY DESCRIPTION
-   Address         : ${caseObj?.propertyId?.address}
-   Survey No.      : ${caseObj?.propertyId?.surveyNo}
-   Village         : ${caseObj?.propertyId?.village}
-   Taluka          : ${caseObj?.propertyId?.taluka}
-   District        : ${caseObj?.propertyId?.district}
-
-2. OWNERSHIP HISTORY (Last 30 Years)
-   • 1998 – Original owner (Regn. No. 1001)
-   • 2012 – Transferred via Gift Deed (Regn. No. 3452)
-   • 2022 – Purchased by ${caseObj?.clientId?.name} (Sale Deed)
-
-3. ENCUMBRANCES & CHARGES
-   • No encumbrances found in the search period.
-   • Property is free from any registered mortgages.
-
-4. LEGAL OBSERVATIONS
-   • Title documents are in order.
-   • Mutation in Revenue records is complete.
-   • No stay, injunction or court attachment found.
-
-5. TITLE OPINION
-   The title of the subject property is CLEAR and MARKETABLE.
-   Property is fit for mortgage in favor of ${caseObj?.bank}.
-
-Signed & Sealed,
-NLK Associates — Advocates & Legal Consultants`;
-      setDraftContent(ai);
+      let content = '';
+      if (templateType === 'English Format') {
+        content = generateEnglishTSR(selectedOpt);
+      } else {
+        content = generateMarathiTSR(selectedOpt);
+      }
+      setDraftContent(content);
       setGenerating(false);
-    }, 2000);
+    }, 800);
   };
 
   const handleSave = () => {
@@ -161,9 +67,9 @@ NLK Associates — Advocates & Legal Consultants`;
     setTimeout(() => {
       const newDraft = {
         _id: `draft_${Date.now()}`,
-        tsrRefNo: refNo || `TSR${String(counter).padStart(3, '0')}`,
-        appId: caseObj?.caseId || 'Manual',
-        applicant: caseObj?.clientId?.name || 'Manual Entry',
+        tsrRefNo: refNo,
+        appId: selectedOpt?.appId || 'Manual',
+        applicant: selectedOpt?.applicant || 'Manual Entry',
         templateType,
         status: 'draft',
         createdAt: new Date().toISOString(),
@@ -171,7 +77,6 @@ NLK Associates — Advocates & Legal Consultants`;
         content: draftContent,
       };
       setDrafts(p => [newDraft, ...p]);
-      setCounter(c => c + 1);
       setSaving(false);
       alert('✅ Draft saved successfully!');
     }, 800);
@@ -181,10 +86,20 @@ NLK Associates — Advocates & Legal Consultants`;
     if (!draftContent.trim()) { alert('Draft content is empty.'); return; }
     setSubmitting(true);
     setTimeout(() => {
-      setDrafts(p => [{ _id: `draft_${Date.now()}`, tsrRefNo: refNo, appId: caseObj?.caseId || 'Manual', applicant: caseObj?.clientId?.name || 'Manual Entry', templateType, status: 'submitted', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), content: draftContent }, ...p]);
+      const newDraft = {
+        _id: `draft_${Date.now()}`,
+        tsrRefNo: refNo,
+        appId: selectedOpt?.appId || 'Manual',
+        applicant: selectedOpt?.applicant || 'Manual Entry',
+        templateType,
+        status: 'submitted',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        content: draftContent,
+      };
+      setDrafts(p => [newDraft, ...p]);
       setDraftContent('');
       setSelectedCase('');
-      setCounter(c => c + 1);
       setSubmitting(false);
       alert('📤 Submitted for Approval successfully!');
     }, 1000);
@@ -201,36 +116,106 @@ NLK Associates — Advocates & Legal Consultants`;
       return;
     }
     
+    // In Phase 2 we use window.print to export PDF, later we can add server-side PDF generation.
     const win = window.open('', '_blank');
     win.document.write(`
       <html>
       <head>
-        <title>NLK TSR Report</title>
+        <title>TSR Scrutiny Report - ${refNo}</title>
         <style>
-          body { font-family: 'Times New Roman', serif; padding: 40px; line-height: 1.6; color: #000; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .header h1 { color: #1e3c72; margin-bottom: 5px; font-size: 24px; }
-          .header p { margin-top: 0; font-size: 14px; font-weight: bold; }
-          .content { white-space: pre-wrap; font-size: 14px; }
-          .footer { margin-top: 60px; text-align: center; font-size: 11px; color: #64748b; }
+          @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Montserrat:wght@400;500;700&display=swap');
+          
+          body { 
+            font-family: 'Times New Roman', serif; 
+            padding: 40px; 
+            line-height: 1.5; 
+            color: #000; 
+            background: #fff;
+          }
+          
+          .letterhead {
+            border-bottom: 3px double #1e3c72;
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .crest-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+          }
+          .advocate-crest {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid #1e3c72;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #1e3c72;
+            font-weight: 700;
+          }
+          .title-section h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #1e3c72;
+            margin: 0;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+          }
+          .title-section h2 {
+            font-style: italic;
+            font-size: 13px;
+            font-weight: normal;
+            color: #334155;
+            margin: 2px 0 0 0;
+          }
+          .contacts {
+            text-align: right;
+            font-size: 10px;
+            color: #475569;
+            font-family: 'Montserrat', sans-serif;
+            line-height: 1.4;
+          }
+
+          .content { 
+            white-space: pre-wrap; 
+            font-size: 13px; 
+            text-align: justify;
+          }
+          
           @media print {
             body { padding: 0; }
-            button { display: none; }
+            .no-print { display: none; }
           }
         </style>
       </head>
       <body>
-        <div class="header">
-          <h1>NLK LAW ASSOCIATES</h1>
-          <p>Advocates & Legal Consultants</p>
+        <div class="letterhead">
+          <div class="crest-container">
+            <div class="advocate-crest">⚖</div>
+            <div class="title-section">
+              <h1>NARAYAN L. KHAMKAR</h1>
+              <h2>B.S.L., LL.B.(Spl.) Advocate & Notary</h2>
+              <div style="font-size: 9px; font-weight: bold; color: #1e3c72; margin-top: 3px;">GOVERNMENT OF INDIA</div>
+            </div>
+          </div>
+          <div class="contacts">
+            <strong>Hadapsar Office:</strong><br>
+            Hadapsar S.O., Pune - 411028<br>
+            Cell: +91 98224 56789 | Email: nlk@gmail.com<br>
+            <strong>License No:</strong> NOT-MH-6543/2020
+          </div>
         </div>
-        <div class="content">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-        <div class="footer">
-          <p>This is a computer-generated document. No signature required.</p>
-          <p>Developed by CALYONIX</p>
-        </div>
-        <div style="text-align: center; margin-top: 30px;">
-          <button onclick="window.print()" style="padding: 10px 20px; background: #1e3c72; color: white; border: none; border-radius: 4px; cursor: pointer;">Print / Save as PDF</button>
+
+        <div class="content">${text}</div>
+
+        <div class="no-print" style="text-align: center; margin-top: 30px; position: sticky; bottom: 20px;">
+          <button onclick="window.print()" style="padding: 12px 30px; background: #1e3c72; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Print / Save as PDF</button>
         </div>
       </body>
       </html>
@@ -245,8 +230,8 @@ NLK Associates — Advocates & Legal Consultants`;
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ fontFamily: 'Playfair Display', fontSize: 28, color: 'var(--navy)', margin: 0 }}>TSR Drafting</h1>
-          <p style={{ color: 'var(--muted)', margin: '6px 0 0', fontSize: 14 }}>Create, edit, and submit AI-assisted Title Search Report drafts</p>
+          <h1 style={{ fontFamily: 'Playfair Display', fontSize: 28, color: 'var(--navy)', margin: 0 }}>TSR Legal Scrutiny Drafting</h1>
+          <p style={{ color: 'var(--muted)', margin: '6px 0 0', fontSize: 14 }}>Create, edit, and export high-fidelity Advocate Scrutiny Reports</p>
         </div>
         <span style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', color: 'white', padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>🤖 AI-Powered</span>
       </div>
@@ -262,37 +247,23 @@ NLK Associates — Advocates & Legal Consultants`;
           {/* Top Controls */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>Select Case</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>Select Case / Initialized TSR</label>
               <select value={selectedCase} onChange={e => setSelectedCase(e.target.value)} style={inputStyle}>
-                <option value="">-- Select Case --</option>
-                {MOCK_CASES.map(c => <option key={c._id} value={c._id}>{c.caseId} — {c.clientId?.name}</option>)}
+                <option value="">-- Select TSR Init --</option>
+                {initiations.map(o => <option key={o._id} value={o._id}>📋 TSR Init: {o.appId} — {o.applicant}</option>)}
               </select>
             </div>
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>TSR Reference No.</label>
-              <input readOnly value={refNo || 'Auto-generated'} style={{ ...inputStyle, background: '#f8fafc', color: 'var(--muted)', cursor: 'not-allowed' }} />
+              <input readOnly value={refNo} style={{ ...inputStyle, background: '#f8fafc', color: 'var(--muted)', cursor: 'not-allowed' }} />
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>Template Type</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>Format Type</label>
               <select value={templateType} onChange={e => setTemplateType(e.target.value)} style={inputStyle}>
-                <option>Standard TSR Template</option>
-                <option>Residential TSR Template</option>
-                <option>Commercial TSR Template</option>
+                <option>English Format</option>
+                <option>Marathi Format</option>
               </select>
             </div>
-          </div>
-
-          {/* Quick Templates */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)' }}>Quick Templates:</span>
-            {[['standard', 'Standard'], ['residential', 'Residential'], ['commercial', 'Commercial']].map(([k, l]) => (
-              <button key={k} onClick={() => handleQuickTemplate(k)}
-                style={{ padding: '6px 16px', borderRadius: 6, border: '1px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--navy)' }}
-                onMouseEnter={e => { e.target.style.background = 'var(--navy)'; e.target.style.color = 'white'; }}
-                onMouseLeave={e => { e.target.style.background = 'white'; e.target.style.color = 'var(--navy)'; }}>
-                {l}
-              </button>
-            ))}
           </div>
 
           {/* Draft Textarea */}
@@ -302,15 +273,15 @@ NLK Associates — Advocates & Legal Consultants`;
               <span style={{ fontSize: 16 }}>📝</span>
             </div>
             <textarea value={draftContent} onChange={e => setDraftContent(e.target.value)}
-              placeholder="Select a Quick Template above, or click 'Generate AI Draft' to auto-fill..."
-              rows={10} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'monospace', lineHeight: 1.6, minHeight: 200 }} />
+              placeholder="Click 'Generate Draft' to compile dynamically..."
+              rows={12} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'monospace', lineHeight: 1.6, minHeight: 400 }} />
           </div>
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button onClick={handleGenerate} disabled={generating}
               style={{ background: generating ? '#a5b4fc' : '#4f46e5', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: generating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-              🤖 {generating ? 'Generating...' : 'Generate AI Draft'}
+              🤖 {generating ? 'Generating Dynamic Draft...' : 'Generate Draft'}
             </button>
             <button onClick={handleSave} disabled={saving}
               style={{ background: saving ? '#86efac' : '#16a34a', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -322,7 +293,7 @@ NLK Associates — Advocates & Legal Consultants`;
             </button>
             <button onClick={() => handleExportPDF(draftContent)}
               style={{ background: '#0e7490', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-              📄 Export PDF
+              📄 Export Advocate PDF
             </button>
           </div>
         </div>
@@ -362,7 +333,7 @@ NLK Associates — Advocates & Legal Consultants`;
                     <td style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => { setDraftContent(d.content); setSelectedCase(''); }} style={{ background: '#f1f5f9', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Edit">✏️</button>
-                        <button onClick={() => alert(d.content)} style={{ background: '#dbeafe', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Preview">👁</button>
+                        <button onClick={() => alert("Previewing: " + d.tsrRefNo)} style={{ background: '#dbeafe', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Preview">👁</button>
                         <button onClick={() => handleExportPDF(d.content)} style={{ background: '#fef3c7', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Export PDF">📄</button>
                         <button onClick={() => handleDeleteDraft(d._id)} style={{ background: '#fee2e2', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Delete">🗑</button>
                       </div>

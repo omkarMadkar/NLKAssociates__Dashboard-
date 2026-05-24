@@ -14,17 +14,18 @@ export default function Dashboard() {
       setData(MOCK_DASHBOARD);
       return;
     }
-    // --- REAL API (commented out for demo) ---
-    // const fetchStats = async () => {
-    //   try {
-    //     const token = localStorage.getItem('token');
-    //     const res = await axios.get('/dashboard/stats', {
-    //       headers: { Authorization: `Bearer ${token}` }
-    //     });
-    //     if (res.data.success) setData(res.data);
-    //   } catch (err) { console.error(err); }
-    // };
-    // fetchStats();
+    // --- REAL API ---
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const { default: axios } = await import('axios');
+        const res = await axios.get('http://localhost:5555/api/dashboard/stats', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data.success) setData(res.data);
+      } catch (err) { console.error(err); }
+    };
+    fetchStats();
   }, []);
 
   if (!data) return <div style={{ padding: 40 }}>Loading...</div>;

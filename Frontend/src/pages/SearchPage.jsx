@@ -30,34 +30,22 @@ export default function SearchPage() {
     setLoading(true);
     setSearched(true);
 
-    if (DEMO_MODE) {
-      // Filter from local mock data
-      setTimeout(() => {
-        const filtered = MOCK_CASES.filter(c => {
-          const lq = query.toLowerCase();
-          const matchesQuery = !query ||
-            c.caseId.toLowerCase().includes(lq) ||
-            (c.clientId?.name || '').toLowerCase().includes(lq) ||
-            (c.propertyId?.address || '').toLowerCase().includes(lq);
-          const matchesBank = !bank || c.bank === bank;
-          const matchesStatus = !status || c.status === status;
-          return matchesQuery && matchesBank && matchesStatus;
-        });
-        setResults(filtered);
+    // --- REAL API ---
+    const token = localStorage.getItem('token');
+    const doSearch = async () => {
+      try {
+        const qBank = bank ? `&bank=${bank}` : '';
+        const qStatus = status ? `&status=${status}` : '';
+        const { default: axios } = await import('axios');
+        const res = await axios.get(`http://localhost:5555/api/cases?search=${query}${qBank}${qStatus}`, { headers: { Authorization: `Bearer ${token}` } });
+        setResults(res.data.cases || []);
         setLoading(false);
-      }, 300);
-      return;
-    }
-    // --- REAL API (commented out for demo) ---
-    // const token = localStorage.getItem('token');
-    // const doSearch = async () => {
-    //   const qBank = bank ? `&bank=${bank}` : '';
-    //   const qStatus = status ? `&status=${status}` : '';
-    //   const res = await API.get(`/cases?search=${query}${qBank}${qStatus}`, { headers: { Authorization: `Bearer ${token}` } });
-    //   setResults(res.data.cases || []);
-    //   setLoading(false);
-    // };
-    // doSearch().catch(console.error);
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+      }
+    };
+    doSearch();
   };
 
   const handleClear = () => {

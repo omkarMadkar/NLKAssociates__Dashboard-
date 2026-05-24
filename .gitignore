@@ -26,3 +26,6 @@ yarn-error.log*
 
 # Docs Images (if user doesn't want them tracked, but wait, the prompt says "upload the ui/ux design ... in the readme file". So I should let git track docs/images/)
 # docs/images/
+
+# Temporary / Scratch directories
+scratch/
