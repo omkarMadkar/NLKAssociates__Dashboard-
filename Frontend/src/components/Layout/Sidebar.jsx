@@ -1,155 +1,357 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { DEMO_MODE } from '../../data/mockData';
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { DEMO_MODE } from "../../data/mockData";
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const role = localStorage.getItem('role');
+  const role = localStorage.getItem("role");
   const [nlOpen, setNlOpen] = useState(true);
   const [blOpen, setBlOpen] = useState(true);
 
   const NAV = [
-    { label: 'Dashboard', icon: '⊞', path: '/dashboard' },
-    { label: 'All Cases', icon: '📁', path: '/cases' },
-    ...(role === 'admin' ? [{ label: 'New Case', icon: '➕', path: '/cases/new' }] : []),
+    { label: "Dashboard", icon: "⊞", path: "/dashboard" },
+    { label: "All Cases", icon: "📁", path: "/cases" },
+    ...(role === "admin"
+      ? [{ label: "New Case", icon: "➕", path: "/cases/new" }]
+      : []),
     {
-      label: 'Non-Litigation', icon: '🏛️', path: null,
+      label: "Non-Litigation",
+      icon: "🏛️",
+      path: null,
       children: [
         {
-          label: 'Business Legal', icon: '📂', path: null, isGroup: true,
+          label: "Business Legal",
+          icon: "📂",
+          path: null,
+          isGroup: true,
           children: [
-            { label: 'TSR Initiation', path: '/non-litigation/business-legal/tsr-initiation', icon: '📋' },
-            { label: 'TSR Drafting', path: '/non-litigation/business-legal/tsr-drafting', icon: '✍️' },
-            { label: 'ICICI Bank', path: '/non-litigation/icici', icon: '🏦' },
-            { label: 'Aditya Birla', path: '/non-litigation/aditya-birla', icon: '🏢' },
-            { label: 'Bajaj', path: '/non-litigation/bajaj', icon: '⚡' },
-          ]
-        }
-      ]
+            {
+              label: "TSR Initiation",
+              path: "/non-litigation/business-legal/tsr-initiation",
+              icon: "📋",
+            },
+            {
+              label: "TSR Drafting",
+              path: "/non-litigation/business-legal/tsr-drafting",
+              icon: "✍️",
+            },
+            { label: "ICICI Bank", path: "/non-litigation/icici", icon: "🏦" },
+            {
+              label: "Aditya Birla",
+              path: "/non-litigation/aditya-birla",
+              icon: "🏢",
+            },
+            { label: "Bajaj", path: "/non-litigation/bajaj", icon: "⚡" },
+          ],
+        },
+      ],
     },
-    { label: 'Search', icon: '🔍', path: '/search' },
-    { label: 'Approvals', icon: '✅', path: '/approvals' },
-    { label: 'Reports', icon: '📊', path: '/reports' },
+    { label: "Search", icon: "🔍", path: "/search" },
+    { label: "Approvals", icon: "✅", path: "/approvals" },
+    { label: "Reports", icon: "📊", path: "/reports" },
   ];
-
 
   const logout = () => {
     if (DEMO_MODE) {
-      alert('🔒 Login/logout disabled in Demo Mode.');
+      alert("🔒 Login/logout disabled in Demo Mode.");
       return;
     }
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/');
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    navigate("/");
   };
 
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div style={{ width: collapsed ? 64 : 260, background: 'var(--navy)', minHeight: '100vh',
-      display: 'flex', flexDirection: 'column', transition: 'width 0.25s ease',
-      position: 'fixed', top: 0, left: 0, zIndex: 100, overflow: 'hidden' }}>
-
+    <div
+      style={{
+        width: collapsed ? 70 : 270,
+        background: "#000",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        transition: "all 0.3s ease",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        zIndex: 100,
+        overflow: "hidden",
+        borderRight: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 0 30px rgba(0,0,0,0.6)",
+      }}
+    >
       {/* Logo */}
-      <div style={{ padding: '24px 16px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)',
-        display: 'flex', alignItems: 'center', gap: 12, justifyContent: collapsed ? 'center' : 'space-between' }}>
+      <div
+        style={{
+          padding: "24px 18px",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: collapsed ? "center" : "space-between",
+        }}
+      >
         {!collapsed && (
           <div>
-            <div style={{ fontFamily: 'Playfair Display', color: 'var(--gold)', fontSize: 22, fontWeight: 700, lineHeight: 1 }}>NLK</div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' }}>Associates</div>
+            <div
+              style={{
+                fontSize: 24,
+                fontWeight: 700,
+                color: "#fff",
+                letterSpacing: 1,
+              }}
+            >
+              NLK
+            </div>
+
+            <div
+              style={{
+                color: "rgba(255,255,255,0.4)",
+                fontSize: 10,
+                letterSpacing: 3,
+                marginTop: 2,
+              }}
+            >
+              ASSOCIATES
+            </div>
           </div>
         )}
-        <button onClick={() => setCollapsed(!collapsed)}
-          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 18, padding: 4 }}>
-          {collapsed ? '→' : '←'}
+
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            border: "none",
+            color: "#fff",
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            cursor: "pointer",
+            transition: "0.2s",
+          }}
+        >
+          {collapsed ? "→" : "←"}
         </button>
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
+      <nav
+        style={{
+          flex: 1,
+          padding: "14px 10px",
+          overflowY: "auto",
+        }}
+      >
         {NAV.map((item) => {
           if (item.children) {
             return (
               <div key={item.label}>
-                <button onClick={() => setNlOpen(!nlOpen)}
-                  style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 12, padding: collapsed ? '12px 20px' : '12px 20px',
-                    color: 'rgba(255,255,255,0.7)', fontSize: 13, justifyContent: collapsed ? 'center' : 'flex-start' }}>
-                  <span style={{ fontSize: 16 }}>{item.icon}</span>
-                  {!collapsed && <><span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span><span>{nlOpen ? '▾' : '▸'}</span></>}
+                <button
+                  onClick={() => setNlOpen(!nlOpen)}
+                  style={{
+                    width: "100%",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: collapsed ? "center" : "space-between",
+                    padding: "14px 14px",
+                    color: "#bdbdbd",
+                    fontSize: 13,
+                    borderRadius: 12,
+                    marginBottom: 6,
+                    transition: "0.25s ease",
+                  }}
+                >
+                  {!collapsed && (
+                    <>
+                      <span
+                        style={{
+                          fontWeight: 500,
+                          letterSpacing: 0.4,
+                        }}
+                      >
+                        {item.label}
+                      </span>
+
+                      <span>{nlOpen ? "−" : "+"}</span>
+                    </>
+                  )}
                 </button>
-                {nlOpen && !collapsed && item.children.map(child => {
-                  if (child.isGroup) {
+
+                {nlOpen &&
+                  !collapsed &&
+                  item.children.map((child) => {
+                    if (child.isGroup) {
+                      return (
+                        <div key={child.label}>
+                          <button
+                            onClick={() => setBlOpen(!blOpen)}
+                            style={{
+                              width: "100%",
+                              background: "rgba(255,255,255,0.03)",
+                              border: "1px solid rgba(255,255,255,0.04)",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              padding: "12px 16px",
+                              borderRadius: 12,
+                              color: "#d1d1d1",
+                              fontSize: 12,
+                              marginBottom: 6,
+                            }}
+                          >
+                            <span
+                              style={{
+                                flex: 1,
+                                textAlign: "left",
+                                fontWeight: 600,
+                                letterSpacing: 0.5,
+                              }}
+                            >
+                              {child.label}
+                            </span>
+
+                            <span>{blOpen ? "−" : "+"}</span>
+                          </button>
+
+                          {blOpen &&
+                            child.children.map((sub) => (
+                              <Link
+                                key={sub.path}
+                                to={sub.path}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  padding: "12px 16px",
+                                  marginBottom: 6,
+                                  marginLeft: 12,
+                                  borderRadius: 12,
+                                  color: isActive(sub.path)
+                                    ? "#fff"
+                                    : "rgba(255,255,255,0.55)",
+                                  textDecoration: "none",
+                                  fontSize: 12,
+                                  background: isActive(sub.path)
+                                    ? "rgba(255,255,255,0.08)"
+                                    : "transparent",
+                                  border: isActive(sub.path)
+                                    ? "1px solid rgba(255,255,255,0.08)"
+                                    : "1px solid transparent",
+                                  transition: "0.25s ease",
+                                  backdropFilter: "blur(10px)",
+                                }}
+                              >
+                                {sub.label}
+                              </Link>
+                            ))}
+                        </div>
+                      );
+                    }
+
                     return (
-                      <div key={child.label}>
-                        {/* Business Legal sub-group header */}
-                        <button onClick={() => setBlOpen(!blOpen)}
-                          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: 'none', cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: 10, padding: '9px 20px 9px 44px',
-                            color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
-                          <span>{child.icon}</span>
-                          <span style={{ flex: 1, textAlign: 'left', fontWeight: 600, letterSpacing: 0.3 }}>{child.label}</span>
-                          <span style={{ fontSize: 10 }}>{blOpen ? '▾' : '▸'}</span>
-                        </button>
-                        {blOpen && child.children.map(sub => (
-                          <Link key={sub.path} to={sub.path}
-                            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 20px 9px 64px',
-                              color: isActive(sub.path) ? 'var(--gold)' : 'rgba(255,255,255,0.5)',
-                              textDecoration: 'none', fontSize: 12,
-                              borderLeft: isActive(sub.path) ? '3px solid var(--gold)' : '3px solid transparent',
-                              background: isActive(sub.path) ? 'rgba(201,168,76,0.08)' : 'transparent',
-                              transition: 'all 0.15s ease' }}>
-                            <span style={{ fontSize: 13 }}>{sub.icon}</span>
-                            {sub.label}
-                          </Link>
-                        ))}
-                      </div>
+                      <Link
+                        key={child.path}
+                        to={child.path}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          padding: "12px 16px",
+                          marginBottom: 6,
+                          borderRadius: 12,
+                          color: isActive(child.path)
+                            ? "#fff"
+                            : "rgba(255,255,255,0.55)",
+                          textDecoration: "none",
+                          fontSize: 13,
+                          background: isActive(child.path)
+                            ? "rgba(255,255,255,0.08)"
+                            : "transparent",
+                          transition: "0.25s ease",
+                        }}
+                      >
+                        {child.label}
+                      </Link>
                     );
-                  }
-                  return (
-                    <Link key={child.path} to={child.path}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px 10px 44px',
-                        color: isActive(child.path) ? 'var(--gold)' : 'rgba(255,255,255,0.55)',
-                        textDecoration: 'none', fontSize: 13, borderLeft: isActive(child.path) ? '3px solid var(--gold)' : '3px solid transparent',
-                        background: isActive(child.path) ? 'rgba(201,168,76,0.08)' : 'transparent',
-                        transition: 'all 0.15s ease' }}>
-                      {child.label}
-                    </Link>
-                  );
-                })}
+                  })}
               </div>
             );
           }
+
           return (
-            <Link key={item.path} to={item.path}
-              style={{ display: 'flex', alignItems: 'center', gap: 12,
-                padding: collapsed ? '12px 20px' : '12px 20px', justifyContent: collapsed ? 'center' : 'flex-start',
-                color: isActive(item.path) ? 'var(--gold)' : 'rgba(255,255,255,0.7)',
-                textDecoration: 'none', fontSize: 13, borderLeft: isActive(item.path) ? '3px solid var(--gold)' : '3px solid transparent',
-                background: isActive(item.path) ? 'rgba(201,168,76,0.08)' : 'transparent',
-                transition: 'all 0.15s ease' }}>
-              <span style={{ fontSize: 16 }}>{item.icon}</span>
+            <Link
+              key={item.path}
+              to={item.path}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: collapsed ? "center" : "flex-start",
+                padding: "14px 16px",
+                marginBottom: 8,
+                borderRadius: 14,
+                color: isActive(item.path) ? "#fff" : "rgba(255,255,255,0.7)",
+                textDecoration: "none",
+                fontSize: 13,
+                fontWeight: 500,
+                background: isActive(item.path)
+                  ? "rgba(255,255,255,0.08)"
+                  : "transparent",
+                border: isActive(item.path)
+                  ? "1px solid rgba(255,255,255,0.08)"
+                  : "1px solid transparent",
+                transition: "all 0.25s ease",
+                backdropFilter: "blur(12px)",
+              }}
+            >
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* Bottom: role + logout */}
-      <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      {/* Bottom */}
+      <div
+        style={{
+          padding: 16,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
         {!collapsed && (
-          <div style={{ marginBottom: 10, padding: '6px 10px', background: 'rgba(201,168,76,0.15)',
-            borderRadius: 6, color: 'var(--gold)', fontSize: 11, fontWeight: 600,
-            textTransform: 'uppercase', letterSpacing: 1 }}>
-            {role || 'staff'}
+          <div
+            style={{
+              marginBottom: 12,
+              padding: "10px 12px",
+              background: "rgba(255,255,255,0.05)",
+              borderRadius: 12,
+              color: "#fff",
+              fontSize: 11,
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: 1,
+            }}
+          >
+            {role || "staff"}
           </div>
         )}
-        <button onClick={logout}
-          style={{ width: '100%', background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)',
-            color: '#f87171', padding: '8px', borderRadius: 6, cursor: 'pointer', fontSize: 12,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          {collapsed ? '↩' : '↩ Logout'}
+
+        <button
+          onClick={logout}
+          style={{
+            width: "100%",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "#fff",
+            padding: "12px",
+            borderRadius: 12,
+            cursor: "pointer",
+            fontSize: 13,
+            fontWeight: 500,
+            transition: "0.25s ease",
+          }}
+        >
+          {collapsed ? "⤴" : "Logout"}
         </button>
       </div>
     </div>

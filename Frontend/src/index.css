@@ -14,9 +14,10 @@
   --text: #0f172a;
   --muted: #64748b;
   --sidebar-width: 260px;
+  --black: #000;
 }
 
-* { font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
+* { font-family: 'DM Sans', sans-serif, 'Inter'; box-sizing: border-box; }
 h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
 body { background: var(--bg); color: var(--text); margin: 0; }
 
