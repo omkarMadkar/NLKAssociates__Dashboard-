@@ -5,32 +5,41 @@
 
 function formatCurrentDate() {
   const d = new Date();
-  return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()}`;
+  return `${d.getDate().toString().padStart(2, "0")}.${(d.getMonth() + 1).toString().padStart(2, "0")}.${d.getFullYear()}`;
 }
 
 export function generateEnglishTSR(data) {
-  const refNo = data.refNo || '[Reference Number]';
-  const appId = data.appId || '[Application Number]';
-  const dateStr = data.initiationDate ? new Date(data.initiationDate).toLocaleDateString('en-IN') : formatCurrentDate();
-  
-  const applicant = data.applicant || '[Applicant Name]';
-  const coApplicant = data.coApplicant || '[Co-Applicant Name]';
-  const owner = data.existingOwner || '[Existing Owner Name]';
-  const transactionType = data.transactionType || '[Transaction Type]';
-  const bankBranch = data.bankBranch || '[Bank Branch]';
-  
-  const village = data.village || '[Village]';
-  const taluka = data.taluka || '[Taluka]';
-  const district = data.district || '[District]';
-  const municipalCouncil = data.municipalCouncil || '[Municipal Council]';
-  const surveyDetails = data.surveyNoDetails || '[Survey Details]';
-  const construction = data.rccConstructionArea || '[Construction Area]';
-  const municipalNo = data.municipalPropertyNo || '[Municipal Property No]';
+  const refNo = data.refNo || "[Reference Number]";
+  const appId = data.appId || "[Application Number]";
+  const dateStr = data.initiationDate
+    ? new Date(data.initiationDate).toLocaleDateString("en-IN")
+    : formatCurrentDate();
 
-  const east = data.boundaryEast || '[East Boundary]';
-  const west = data.boundaryWest || '[West Boundary]';
-  const south = data.boundarySouth || '[South Boundary]';
-  const north = data.boundaryNorth || '[North Boundary]';
+  const applicant = data.applicant || "[Applicant Name]";
+  const coApplicant = data.coApplicant || "[Co-Applicant Name]";
+  const owner = data.existingOwner || "[Existing Owner Name]";
+  const transactionType = data.transactionType || "[Transaction Type]";
+  const bankBranch = data.bankBranch || "[Bank Branch]";
+
+  const village = data.village || "[Village]";
+  const taluka = data.taluka || "[Taluka]";
+  const district = data.district || "[District]";
+  const municipalCouncil = data.municipalCouncil || "[Municipal Council]";
+  const parcelDescription =
+    data.landParcels?.length > 0
+      ? data.landParcels
+          .map((parcel, index) => {
+            return `${index + 1}. Survey No. ${parcel.surveyNo || "-"}, Hissa No. ${parcel.hissaNo || "-"} admeasuring ${parcel.area || "-"} ${parcel.unit || ""}`;
+          })
+          .join("\n")
+      : "[Survey Details]";
+  const construction = data.rccConstructionArea || "[Construction Area]";
+  const municipalNo = data.municipalPropertyNo || "[Municipal Property No]";
+
+  const east = data.boundaryEast || "[East Boundary]";
+  const west = data.boundaryWest || "[West Boundary]";
+  const south = data.boundarySouth || "[South Boundary]";
+  const north = data.boundaryNorth || "[North Boundary]";
 
   return `TITLE SEARCH REPORT & LEGAL SCRUTINY REPORT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -54,8 +63,13 @@ Subject: Legal Scrutiny Report pertaining to the file of ${applicant} and ${coAp
 
 • PART I : PROPERTY DETAILS
 
-All that piece and parcel of property bearing land situated at Village – ${village}, Taluka – ${taluka}, District – ${district}, within the jurisdiction of Sub-Registrar ${taluka} and within the limits of ${municipalCouncil}, comprising:
-${surveyDetails}, aggregating to a total area of the subject property, together with R.C.C. construction standing thereon admeasuring about ${construction} on ground floor, bearing Property No. ${municipalNo}, and bounded as follows:
+All that piece and parcel of property bearing land situated at Village – ${village}, Taluka – ${taluka}, District – ${district}, within the jurisdiction of Sub-Registrar ${taluka} and within the limits of ${municipalCouncil}, comprising the following land parcels:
+
+${parcelDescription}
+
+Together with R.C.C. construction standing thereon admeasuring about ${construction}
+on ground floor, bearing Property No. ${municipalNo},
+and bounded as follows:
 
 On or towards East  : By ${east}
 On or towards West  : By ${west}
@@ -128,5 +142,8 @@ ADVOCATE & NOTARY`;
 
 export function generateMarathiTSR(data) {
   // Can be mapped similarly in Marathi based on Ganesh Sarak sample
-  return generateEnglishTSR(data).replace('TITLE SEARCH REPORT & LEGAL SCRUTINY REPORT', 'TITLE SEARCH REPORT (MARATHI FORMAT)');
+  return generateEnglishTSR(data).replace(
+    "TITLE SEARCH REPORT & LEGAL SCRUTINY REPORT",
+    "TITLE SEARCH REPORT (MARATHI FORMAT)",
+  );
 }

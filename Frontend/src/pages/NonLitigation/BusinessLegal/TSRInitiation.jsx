@@ -44,7 +44,15 @@ const INITIAL = {
   taluka: "",
   district: "",
   municipalCouncil: "",
-  surveyNoDetails: "",
+  landParcels: [
+    {
+      surveyNo: "",
+      hissaNo: "",
+      area: "",
+      unit: "",
+      remarks: "",
+    },
+  ],
   boundaryEast: "",
   boundaryWest: "",
   boundarySouth: "",
@@ -179,6 +187,45 @@ export default function TSRInitiation() {
     if (errors[name]) setErrors((p) => ({ ...p, [name]: null }));
   };
 
+  const addParcel = () => {
+    setForm((prev) => ({
+      ...prev,
+      landParcels: [
+        ...prev.landParcels,
+        {
+          surveyNo: "",
+          hissaNo: "",
+          area: "",
+          unit: "",
+          remarks: "",
+        },
+      ],
+    }));
+  };
+
+  const removeParcel = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      landParcels: prev.landParcels.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleParcelChange = (index, field, value) => {
+    setForm((prev) => {
+      const updated = [...prev.landParcels];
+
+      updated[index] = {
+        ...updated[index],
+        [field]: value,
+      };
+
+      return {
+        ...prev,
+        landParcels: updated,
+      };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -254,7 +301,7 @@ export default function TSRInitiation() {
             fontWeight: 700,
           }}
         >
-        BUSINESS LEGAL
+          BUSINESS LEGAL
         </span>
       </div>
 
@@ -776,14 +823,156 @@ export default function TSRInitiation() {
                 <label style={lbl}>
                   Detailed Survey / Hissa No descriptions
                 </label>
-                <textarea
-                  name="surveyNoDetails"
-                  value={form.surveyNoDetails}
-                  onChange={handleChange}
-                  placeholder="E.g. Survey No. 237, Hissa No. 2A/43 admeasuring 00 H 01 R..."
-                  rows={2}
-                  style={{ ...inp, resize: "vertical" }}
-                />
+                <div
+                  style={{
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 12,
+                    padding: 20,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 20,
+                    }}
+                  >
+                    <h4
+                      style={{
+                        margin: 0,
+                        fontSize: 16,
+                        fontWeight: 700,
+                      }}
+                    >
+                      Land Parcels
+                    </h4>
+
+                    <button
+                      type="button"
+                      onClick={addParcel}
+                      style={{
+                        background: "var(--black)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "8px 14px",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
+                    >
+                      + Add Survey/Hissa
+                    </button>
+                  </div>
+
+                  {form.landParcels.map((parcel, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 10,
+                        padding: 16,
+                        marginBottom: 16,
+                        background: "white",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          marginBottom: 12,
+                        }}
+                      >
+                        <strong>Parcel #{index + 1}</strong>
+
+                        {form.landParcels.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeParcel(index)}
+                            style={{
+                              background: "#fee2e2",
+                              color: "#dc2626",
+                              border: "none",
+                              borderRadius: 6,
+                              padding: "6px 10px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                          gap: 16,
+                        }}
+                      >
+                        <input
+                          placeholder="Survey / Gat No"
+                          value={parcel.surveyNo}
+                          onChange={(e) =>
+                            handleParcelChange(
+                              index,
+                              "surveyNo",
+                              e.target.value,
+                            )
+                          }
+                          style={inp}
+                        />
+
+                        <input
+                          placeholder="Hissa No"
+                          value={parcel.hissaNo}
+                          onChange={(e) =>
+                            handleParcelChange(index, "hissaNo", e.target.value)
+                          }
+                          style={inp}
+                        />
+
+                        <input
+                          placeholder="Area Value"
+                          value={parcel.area}
+                          onChange={(e) =>
+                            handleParcelChange(index, "area", e.target.value)
+                          }
+                          style={inp}
+                        />
+
+                        <select
+                          value={parcel.unit}
+                          onChange={(e) =>
+                            handleParcelChange(index, "unit", e.target.value)
+                          }
+                          style={inp}
+                        >
+                          <option value="">Select Unit</option>
+                          <option value="Sq. Mtr">Sq. Mtr</option>
+                          <option value="Sq. Ft">Sq. Ft</option>
+                          <option value="Are">Are</option>
+                          <option value="Hectare">Hectare</option>
+                          <option value="Acre">Acre</option>
+                          <option value="Guntha">Guntha</option>
+                        </select>
+                      </div>
+
+                      <textarea
+                        placeholder="Remarks"
+                        value={parcel.remarks}
+                        onChange={(e) =>
+                          handleParcelChange(index, "remarks", e.target.value)
+                        }
+                        style={{
+                          ...inp,
+                          marginTop: 12,
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* BOUNDARIES BOX */}
@@ -803,7 +992,7 @@ export default function TSRInitiation() {
                     fontSize: 15,
                   }}
                 >
-                Physical Boundaries (Legal descriptions)
+                  Physical Boundaries (Legal descriptions)
                 </h4>
                 <div
                   style={{
@@ -861,7 +1050,10 @@ export default function TSRInitiation() {
             {activeTab !== "property" ? (
               <button
                 type="button"
-                onClick={() => setActiveTab("property")}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveTab("property");
+                }}
                 style={{
                   background: "white",
                   color: "var(--black)",

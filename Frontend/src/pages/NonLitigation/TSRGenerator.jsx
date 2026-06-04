@@ -60,9 +60,7 @@ export default function TSRGenerator() {
     setGenerating(true);
     if (DEMO_MODE) {
       setTimeout(() => {
-        const mockDraft = `TITLE SEARCH REPORT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+        const mockDraft = `
 1. REPORT PARTICULARS
    Case ID         : ${caseData?.caseId}
    Client Name     : ${caseData?.clientId?.name}
