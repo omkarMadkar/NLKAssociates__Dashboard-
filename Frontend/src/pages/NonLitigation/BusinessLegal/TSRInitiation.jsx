@@ -305,127 +305,6 @@ export default function TSRInitiation() {
         </span>
       </div>
 
-      {/* OCR Drag-Drop Upload Area */}
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragActive(true);
-        }}
-        onDragLeave={() => setDragActive(false)}
-        onDrop={handleFileDrop}
-        style={{
-          background: "white",
-          border: dragActive
-            ? "2px dashed var(--gold)"
-            : "2px dashed var(--border)",
-          borderRadius: 16,
-          padding: "32px 20px",
-          textAlign: "center",
-          position: "relative",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
-          transition: "all 0.3s ease",
-          overflow: "hidden",
-        }}
-      >
-        {ocrScanning ? (
-          <div
-            style={{
-              padding: "20px 0",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 16,
-            }}
-          >
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                border: "4px solid #f1f5f9",
-                borderTop: "4px solid var(--black)",
-                borderRadius: "50%",
-                animation: "spin 1s linear infinite",
-              }}
-            />
-            <div
-              style={{
-                fontFamily: "Inter",
-                fontSize: 18,
-                color: "var(--black)",
-                fontWeight: 600,
-              }}
-            >
-              {ocrStatus}
-            </div>
-            <div style={{ fontSize: 13, color: "var(--muted)" }}>
-              Processing file: <strong>{fileUploadedName}</strong>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div
-              style={{
-                marginBottom: 12,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <FolderOpen size={40} color="var(--black)" strokeWidth={1.8} />
-            </div>
-            <h3
-              style={{
-                fontFamily: "Inter",
-                fontSize: 18,
-                color: "var(--black)",
-                margin: "0 0 6px 0",
-              }}
-            >
-              AI Legal Document OCR Uploader
-            </h3>
-            <p
-              style={{
-                color: "var(--muted)",
-                fontSize: 13,
-                margin: "0 0 16px 0",
-                maxWidth: 500,
-                marginLeft: "auto",
-                marginRight: "auto",
-                lineHeight: 1.4,
-              }}
-            >
-              Drag & drop title deeds, e-search receipt GRAS PDFs, or 7/12
-              extracts. AI OCR will scan and extract all boundaries & details
-              instantly!
-            </p>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-              <input
-                type="file"
-                id="fileInp"
-                onChange={handleFileDrop}
-                style={{ display: "none" }}
-                accept=".pdf,.doc,.docx,.jpg,.png"
-              />
-              <label
-                htmlFor="fileInp"
-                style={{
-                  background: "var(--black)",
-                  color: "white",
-                  padding: "10px 24px",
-                  borderRadius: 8,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "inline-block",
-                }}
-              >
-                Browse Files
-              </label>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Tabbed Form Panel */}
       <div
         style={{
@@ -466,41 +345,6 @@ export default function TSRInitiation() {
           >
             20+ ADVANCED LEGAL FIELDS
           </span>
-        </div>
-
-        {/* Tab Buttons */}
-        <div
-          style={{
-            display: "flex",
-            background: "#f8fafc",
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
-          {[
-            { id: "basic", label: "Basic Info & SRO" },
-            { id: "property", label: "Property & Boundaries" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              style={{
-                flex: 1,
-                padding: "14px 20px",
-                border: "none",
-                background: activeTab === t.id ? "white" : "transparent",
-                borderBottom:
-                  activeTab === t.id ? "2px solid var(--gold)" : "none",
-                color: activeTab === t.id ? "var(--black)" : "var(--muted)",
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                borderRight: "1px solid #e2e8f0",
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
         </div>
 
         <form onSubmit={handleSubmit} style={{ padding: 28 }}>
@@ -1046,48 +890,227 @@ export default function TSRInitiation() {
             </div>
           )}
 
-          <div style={{ marginTop: 28, display: "flex", gap: 12 }}>
-            {activeTab !== "property" ? (
+
+          {/* TAB 3: DOCUMENTS */}
+          {activeTab === "documents" && (
+            <div className="animate-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* OCR Drag-Drop Upload Area */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragActive(true);
+        }}
+        onDragLeave={() => setDragActive(false)}
+        onDrop={handleFileDrop}
+        style={{
+          background: "white",
+          border: dragActive
+            ? "2px dashed var(--gold)"
+            : "2px dashed var(--border)",
+          borderRadius: 16,
+          padding: "32px 20px",
+          textAlign: "center",
+          position: "relative",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+          transition: "all 0.3s ease",
+          overflow: "hidden",
+        }}
+      >
+        {ocrScanning ? (
+          <div
+            style={{
+              padding: "20px 0",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 16,
+            }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                border: "4px solid #f1f5f9",
+                borderTop: "4px solid var(--black)",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            />
+            <div
+              style={{
+                fontFamily: "Inter",
+                fontSize: 18,
+                color: "var(--black)",
+                fontWeight: 600,
+              }}
+            >
+              {ocrStatus}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--muted)" }}>
+              Processing file: <strong>{fileUploadedName}</strong>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div
+              style={{
+                marginBottom: 12,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <FolderOpen size={40} color="var(--black)" strokeWidth={1.8} />
+            </div>
+            <h3
+              style={{
+                fontFamily: "Inter",
+                fontSize: 18,
+                color: "var(--black)",
+                margin: "0 0 6px 0",
+              }}
+            >
+              AI Legal Document OCR Uploader
+            </h3>
+            <p
+              style={{
+                color: "var(--muted)",
+                fontSize: 13,
+                margin: "0 0 16px 0",
+                maxWidth: 500,
+                marginLeft: "auto",
+                marginRight: "auto",
+                lineHeight: 1.4,
+              }}
+            >
+              Drag & drop title deeds, e-search receipt GRAS PDFs, or 7/12
+              extracts. AI OCR will scan and extract all boundaries & details
+              instantly!
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+              <input
+                type="file"
+                id="fileInp"
+                onChange={handleFileDrop}
+                style={{ display: "none" }}
+                accept=".pdf,.doc,.docx,.jpg,.png"
+              />
+              <label
+                htmlFor="fileInp"
+                style={{
+                  background: "var(--black)",
+                  color: "white",
+                  padding: "10px 24px",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-block",
+                }}
+              >
+                Browse Files
+              </label>
+            </div>
+          </div>
+        )}
+      </div>
+
+
+            </div>
+          )}
+
+          <div style={{ marginTop: 28, display: "flex", gap: 12, justifyContent: "space-between" }}>
+            {activeTab !== "basic" && (
               <button
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
-                  setActiveTab("property");
+                  setActiveTab(activeTab === "documents" ? "property" : "basic");
                 }}
                 style={{
-                  background: "white",
-                  color: "var(--black)",
-                  border: "1px solid var(--black)",
-                  padding: "13px 40px",
+                  background: "transparent",
+                  color: "var(--muted)",
+                  border: "1px solid var(--border)",
+                  padding: "13px 24px",
                   borderRadius: 8,
                   fontSize: 15,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   cursor: "pointer",
                   fontFamily: "Inter",
                 }}
               >
-                Next Section ➔
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={submitting}
-                style={{
-                  background: "var(--black)",
-                  color: "white",
-                  border: "none",
-                  padding: "13px 40px",
-                  borderRadius: 8,
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: submitting ? "not-allowed" : "pointer",
-                  opacity: submitting ? 0.7 : 1,
-                  fontFamily: "Inter",
-                }}
-              >
-                {submitting ? "Initiating..." : "Initiate TSR Report"}
+                ➔ Back
               </button>
             )}
+
+            <div style={{ marginLeft: "auto" }}>
+              {activeTab === "basic" && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveTab("property");
+                  }}
+                  style={{
+                    background: "white",
+                    color: "var(--black)",
+                    border: "1px solid var(--black)",
+                    padding: "13px 40px",
+                    borderRadius: 8,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontFamily: "Inter",
+                  }}
+                >
+                  Next Section ➔
+                </button>
+              )}
+
+              {activeTab === "property" && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveTab("documents");
+                  }}
+                  style={{
+                    background: "white",
+                    color: "var(--black)",
+                    border: "1px solid var(--black)",
+                    padding: "13px 40px",
+                    borderRadius: 8,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontFamily: "Inter",
+                  }}
+                >
+                  Next Section ➔
+                </button>
+              )}
+
+              {activeTab === "documents" && (
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  style={{
+                    background: "var(--black)",
+                    color: "white",
+                    border: "none",
+                    padding: "13px 40px",
+                    borderRadius: 8,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    cursor: submitting ? "not-allowed" : "pointer",
+                    opacity: submitting ? 0.7 : 1,
+                    fontFamily: "Inter",
+                  }}
+                >
+                  {submitting ? "Initiating..." : "Initiate TSR Report"}
+                </button>
+              )}
+            </div>
           </div>
         </form>
       </div>
