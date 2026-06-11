@@ -576,15 +576,7 @@ export default function TSRInitiation() {
                   />
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* TAB 2: PROPERTY & BOUNDARIES */}
-          {activeTab === "property" && (
-            <div
-              className="animate-in"
-              style={{ display: "flex", flexDirection: "column", gap: 20 }}
-            >
               <div
                 style={{
                   display: "grid",
@@ -1025,7 +1017,7 @@ export default function TSRInitiation() {
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
-                  setActiveTab(activeTab === "documents" ? "property" : "basic");
+                  setActiveTab("basic");
                 }}
                 style={{
                   background: "transparent",
@@ -1049,29 +1041,6 @@ export default function TSRInitiation() {
                   type="button"
                   onClick={(e) => {
                     e.preventDefault();
-                    setActiveTab("property");
-                  }}
-                  style={{
-                    background: "white",
-                    color: "var(--black)",
-                    border: "1px solid var(--black)",
-                    padding: "13px 40px",
-                    borderRadius: 8,
-                    fontSize: 15,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    fontFamily: "Inter",
-                  }}
-                >
-                  Next Section ➔
-                </button>
-              )}
-
-              {activeTab === "property" && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
                     setActiveTab("documents");
                   }}
                   style={{
@@ -1089,6 +1058,7 @@ export default function TSRInitiation() {
                   Next Section ➔
                 </button>
               )}
+
 
               {activeTab === "documents" && (
                 <button
