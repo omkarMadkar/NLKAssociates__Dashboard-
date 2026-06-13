@@ -72,6 +72,17 @@ const TSRInitiationSchema = new mongoose.Schema(
       default: "initiated",
     },
 
+    otherProvisionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TSROtherProvision",
+      default: null,
+    },
+    titleFlowId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TSRTitleFlow",
+      default: null,
+    },
+
     // Uploaded documents tracking
     uploadedDocuments: [
       {

@@ -13,6 +13,8 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const tsrRoutes = require('./routes/tsrRoutes');
 const tsrInitiationRoutes = require('./routes/tsrInitiationRoutes');
+const tsrOtherProvisionRoutes = require("./routes/tsrOtherProvisionRoutes");
+const tsrTitleFlowRoutes = require("./routes/tsrTitleFlowRoutes");
 const approvalRoutes = require('./routes/approvalRoutes');
 const path = require('path');
 const fs = require('fs');
@@ -49,6 +51,8 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/tsr', tsrRoutes);
 app.use('/api/tsr-initiation', tsrInitiationRoutes);
 app.use('/api/approvals', approvalRoutes);
+app.use("/api/tsr-other-provisions",tsrOtherProvisionRoutes);
+app.use("/api/tsr-title-flow",tsrTitleFlowRoutes);
 
 
 // PORT
