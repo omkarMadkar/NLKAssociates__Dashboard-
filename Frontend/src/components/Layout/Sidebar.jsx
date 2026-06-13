@@ -12,9 +12,6 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const NAV = [
     { label: "Dashboard", icon: "⊞", path: "/dashboard" },
     { label: "All Cases", icon: "📁", path: "/cases" },
-    ...(role === "admin"
-      ? [{ label: "New Case", icon: "➕", path: "/cases/new" }]
-      : []),
     {
       label: "Non-Litigation",
       icon: "🏛️",
@@ -36,20 +33,11 @@ export default function Sidebar({ collapsed, setCollapsed }) {
               path: "/non-litigation/business-legal/tsr-drafting",
               icon: "✍️",
             },
-            { label: "ICICI Bank", path: "/non-litigation/icici", icon: "🏦" },
-            {
-              label: "Aditya Birla",
-              path: "/non-litigation/aditya-birla",
-              icon: "🏢",
-            },
-            { label: "Bajaj", path: "/non-litigation/bajaj", icon: "⚡" },
           ],
         },
       ],
     },
-    { label: "Search", icon: "🔍", path: "/search" },
-    { label: "Approvals", icon: "✅", path: "/approvals" },
-    { label: "Reports", icon: "📊", path: "/reports" },
+
   ];
 
   const logout = () => {

@@ -1,31 +1,19 @@
+// TSRInitiation.jsx
+// Main orchestrator: holds all form state, API calls (create/list/delete, excel upload,
+// OCR upload, title-flow save, other-provisions save) and renders the 3 section
+// components in tabs + the records table.
+//
+// Sections split into: src/components/tsr/TSRBasicInfo.jsx,
+// src/components/tsr/TSRDocumentsUpload.jsx, src/components/tsr/TSROtherProvisions.jsx
+// Shared styles: src/components/tsr/tsrShared.jsx
+
 import { useState, useEffect } from "react";
 import API from "../../../api/axios";
-import { FolderOpen } from "lucide-react";
-
-const STATUS_STYLES = {
-  initiated: { bg: "#dbeafe", color: "#1d4ed8", label: "Initiated" },
-  in_progress: { bg: "#fef3c7", color: "#d97706", label: "In Progress" },
-  completed: { bg: "#dcfce7", color: "#16a34a", label: "Completed" },
-  cancelled: { bg: "#fee2e2", color: "#dc2626", label: "Cancelled" },
-};
-
-function StatusBadge({ status }) {
-  const s = STATUS_STYLES[status] || STATUS_STYLES.initiated;
-  return (
-    <span
-      style={{
-        padding: "3px 10px",
-        borderRadius: 20,
-        fontSize: 12,
-        fontWeight: 600,
-        background: s.bg,
-        color: s.color,
-      }}
-    >
-      {s.label}
-    </span>
-  );
-}
+import { StatusBadge } from "../../../components/TSRShared";
+import TSRBasicInfo from "../../../models/TSRBasicInfo";
+import TSRDocumentsUpload from "../../../models/TSRDocumentsUpload";
+import TSROtherProvisions from "../../../models/TSROtherProvision";
+import TSRWaitingReport from "../../../models/TSRWaitingReport";
 
 const INITIAL = {
   author: "Narayan",
@@ -61,6 +49,131 @@ const INITIAL = {
   executiveEmail: "",
 };
 
+const INITIAL_OTHER_PROVISIONS = [
+  {
+    code: "5.1",
+    question: "Whether provisions of urban land ceiling act are applicable?",
+    answer: "No",
+    remarks: "",
+  },
+  {
+    code: "5.2",
+    question:
+      "Whether any property/ies intend to be given as security to any minor claim/share?",
+    answer: "No",
+    remarks: "",
+  },
+  {
+    code: "5.3",
+    question: "Whether property affected by revenue and tenancy regulations?",
+    answer: "No",
+    remarks: "",
+  },
+  {
+    code: "5.4",
+    question: "Whether user land converted into non-agricultural use?",
+    answer: "No",
+    remarks: "",
+  },
+  {
+    code: "5.5",
+    question: "Whether up to date tax/land revenue has been paid?",
+    answer: "Not Known",
+    remarks: "",
+  },
+  {
+    code: "5.6",
+    question: "Whether all original documents scrutinized?",
+    answer: "Yes",
+    remarks: "",
+  },
+  {
+    code: "5.7",
+    question: "Whether required documents available for creating mortgage?",
+    answer: "Yes",
+    remarks: "",
+  },
+  {
+    code: "5.8",
+    question: "Whether previous owners had competency to transfer property?",
+    answer: "Yes",
+    remarks: "",
+  },
+  {
+    code: "5.9",
+    question: "Whether proposed owners had competency to transfer property?",
+    answer: "Yes",
+    remarks: "",
+  },
+  {
+    code: "5.10",
+    question: "What is tenure of land?",
+    answer: "NA",
+    remarks: "",
+  },
+  {
+    code: "5.11",
+    question: "Whether land is Adivasi (Tribal) Land?",
+    answer: "No",
+    remarks: "",
+  },
+  {
+    code: "5.12",
+    question: "Whether property is joint family property?",
+    answer: "No",
+    remarks: "",
+  },
+  {
+    code: "5.13",
+    question: "Whether SARFAESI Act applicable?",
+    answer: "Yes",
+    remarks: "",
+  },
+  {
+    code: "5.14",
+    question: "Whether property subject to reservation/acquisition?",
+    answer: "No",
+    remarks: "",
+  },
+  {
+    code: "5.15",
+    question: "Whether property transferred through POA holder?",
+    answer: "No",
+    remarks: "",
+  },
+  {
+    code: "5.16",
+    question: "Whether POA holder had authority to sell?",
+    answer: "NA",
+    remarks: "",
+  },
+  {
+    code: "5.17",
+    question: "Whether POA registered?",
+    answer: "NA",
+    remarks: "",
+  },
+  {
+    code: "5.18",
+    question: "Whether NOC required for mortgage?",
+    answer: "No",
+    remarks: "",
+  },
+  {
+    code: "5.19",
+    question: "Whether permission required upon invocation of mortgage?",
+    answer: "No",
+    remarks: "",
+  },
+  {
+    code: "5.20",
+    question: "Whether Search Report obtained?",
+    answer: "Yes",
+    remarks: "",
+  },
+  { code: "5.21", question: "Whether EC obtained?", answer: "No", remarks: "" },
+];
+
 export default function TSRInitiation() {
   const [form, setForm] = useState(INITIAL);
   const [records, setRecords] = useState([]);
@@ -68,13 +181,27 @@ export default function TSRInitiation() {
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState("basic");
 
-  // OCR states
+  // OCR / document upload state
   const [ocrScanning, setOcrScanning] = useState(false);
   const [ocrStatus, setOcrStatus] = useState("");
   const [fileUploadedName, setFileUploadedName] = useState("");
   const [dragActive, setDragActive] = useState(false);
 
-  // Fetch initial records
+  // Title flow excel state
+  const [titleFlowFile, setTitleFlowFile] = useState(null);
+  const [titleFlowUploading, setTitleFlowUploading] = useState(false);
+  const [titleFlowData, setTitleFlowData] = useState(null);
+
+  // Other provisions state
+  const [otherProvisions, setOtherProvisions] = useState(
+    INITIAL_OTHER_PROVISIONS,
+  );
+
+  const authHeader = () => ({
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  });
+
+  // ---------- FETCH RECORDS ----------
   useEffect(() => {
     fetchRecords();
   }, []);
@@ -82,7 +209,7 @@ export default function TSRInitiation() {
   const fetchRecords = async () => {
     try {
       const { data } = await API.get("/tsr-initiation/list", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: authHeader(),
       });
       if (data.success) {
         setRecords(data.data);
@@ -92,6 +219,7 @@ export default function TSRInitiation() {
     }
   };
 
+  // ---------- OCR DOCUMENT UPLOAD (Part I auto-fill) ----------
   const handleFileDrop = async (e) => {
     e.preventDefault();
     setDragActive(false);
@@ -112,18 +240,15 @@ export default function TSRInitiation() {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            ...authHeader(),
           },
         },
       );
 
       if (data.success) {
-        // Merge extracted fields into the current form state
-        // This ensures progressive filling (we don't overwrite manual entries with blanks)
         setForm((prev) => {
           const newForm = { ...prev };
           Object.keys(data.extractedFields).forEach((key) => {
-            // Only update if the extracted field has a value
             if (data.extractedFields[key]) {
               newForm[key] = data.extractedFields[key];
             }
@@ -132,7 +257,7 @@ export default function TSRInitiation() {
         });
 
         alert(
-          `✅ Analysis Complete!\n\nDetected: ${data.documentType}\n${data.message}`,
+          `Analysis Complete.\n\nDetected: ${data.documentType}\n${data.message}`,
         );
       }
     } catch (err) {
@@ -152,26 +277,39 @@ export default function TSRInitiation() {
     }
   };
 
-  const inp = {
-    border: "1px solid var(--border)",
-    padding: "10px 14px",
-    borderRadius: 8,
-    fontSize: 14,
-    outline: "none",
-    width: "100%",
-    boxSizing: "border-box",
-    background: "white",
-  };
-  const lbl = {
-    fontSize: 12,
-    fontWeight: 600,
-    color: "var(--muted)",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 6,
-    display: "block",
+  // ---------- TITLE FLOW EXCEL UPLOAD (Part III preview) ----------
+  const handleTitleFlowExcel = async (e) => {
+    try {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      setTitleFlowUploading(true);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await API.post(
+        "/tsr-title-flow/upload-excel",
+        formData,
+        {
+          headers: {
+            ...authHeader(),
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      setTitleFlowFile(file);
+      setTitleFlowData(response.data.rows);
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.message || "Excel Upload Failed");
+    } finally {
+      setTitleFlowUploading(false);
+    }
   };
 
+  // ---------- BASIC FORM HANDLERS ----------
   const validate = () => {
     const e = {};
     if (!form.appId.trim()) e.appId = "Required";
@@ -192,13 +330,7 @@ export default function TSRInitiation() {
       ...prev,
       landParcels: [
         ...prev.landParcels,
-        {
-          surveyNo: "",
-          hissaNo: "",
-          area: "",
-          unit: "",
-          remarks: "",
-        },
+        { surveyNo: "", hissaNo: "", area: "", unit: "", remarks: "" },
       ],
     }));
   };
@@ -213,38 +345,73 @@ export default function TSRInitiation() {
   const handleParcelChange = (index, field, value) => {
     setForm((prev) => {
       const updated = [...prev.landParcels];
-
-      updated[index] = {
-        ...updated[index],
-        [field]: value,
-      };
-
-      return {
-        ...prev,
-        landParcels: updated,
-      };
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, landParcels: updated };
     });
   };
 
+  // ---------- OTHER PROVISIONS HANDLER ----------
+  const handleProvisionChange = (index, field, value) => {
+    setOtherProvisions((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  // ---------- SUBMIT (saves all 3 parts) ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!validate()) return;
+
     setSubmitting(true);
 
     try {
-      const { data } = await API.post("/tsr-initiation/create", form, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      // STEP 1 - SAVE PART I (Basic Info)
+      const tsrResponse = await API.post("/tsr-initiation/create", form, {
+        headers: authHeader(),
       });
-      if (data.success) {
-        alert(
-          '📋 TSR Initialized Successfully! Go to the "TSR Drafting" tab to draft and compile this case.',
-        );
-        setForm(INITIAL);
-        fetchRecords(); // Refresh table
+
+      const tsrId = tsrResponse.data.data._id;
+
+      // STEP 2 - SAVE PART V (Other Provisions)
+      await API.post(
+        "/tsr-other-provisions/create",
+        {
+          tsrInitiationId: tsrId,
+          answers: otherProvisions,
+        },
+        { headers: authHeader() },
+      );
+
+      // STEP 3 - SAVE PART III (Title Flow Excel, if uploaded)
+      if (titleFlowFile) {
+        const formData = new FormData();
+        formData.append("file", titleFlowFile);
+        formData.append("tsrInitiationId", tsrId);
+
+        await API.post("/tsr-title-flow/upload-and-save", formData, {
+          headers: {
+            ...authHeader(),
+            "Content-Type": "multipart/form-data",
+          },
+        });
       }
+
+      alert("TSR Initiated Successfully");
+
+      // Reset everything for a fresh entry
+      setForm(INITIAL);
+      setOtherProvisions(INITIAL_OTHER_PROVISIONS);
+      setTitleFlowFile(null);
+      setTitleFlowData(null);
+      setActiveTab("basic");
+
+      fetchRecords();
     } catch (err) {
-      console.error("Failed to create TSR Initiation", err);
-      alert("Failed to save TSR initiation.");
+      console.error(err);
+      alert("Failed to save TSR");
     } finally {
       setSubmitting(false);
     }
@@ -253,9 +420,7 @@ export default function TSRInitiation() {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this TSR Initiation record?")) return;
     try {
-      await API.delete(`/tsr-initiation/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      await API.delete(`/tsr-initiation/${id}`, { headers: authHeader() });
       fetchRecords();
     } catch (err) {
       console.error("Failed to delete", err);
@@ -278,27 +443,28 @@ export default function TSRInitiation() {
         <div>
           <h1
             style={{
-              fontFamily: "Inter",
-              fontSize: 28,
+              fontSize: 26,
               color: "var(--black)",
               margin: 0,
+              fontWeight: 700,
             }}
           >
-            TSR Scrutiny & Initiation
+            TSR Scrutiny &amp; Initiation
           </h1>
           <p style={{ color: "var(--muted)", margin: "6px 0 0", fontSize: 14 }}>
-            Start a new Title Search Report using advanced legal details or AI
-            OCR scan
+            Start a new Title Search Report using legal details, Excel upload,
+            or AI OCR scan
           </p>
         </div>
         <span
           style={{
             background: "var(--black)",
-            color: "var(--gold)",
+            color: "white",
             padding: "6px 16px",
             borderRadius: 20,
             fontSize: 12,
             fontWeight: 700,
+            letterSpacing: 0.5,
           }}
         >
           BUSINESS LEGAL
@@ -309,729 +475,117 @@ export default function TSRInitiation() {
       <div
         style={{
           background: "white",
-          borderRadius: 16,
-          boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+          borderRadius: 12,
+          border: "1px solid var(--border)",
           overflow: "hidden",
         }}
       >
+        {/* Tab Header */}
         <div
           style={{
             background: "var(--black)",
-            padding: "20px 28px",
+            padding: "16px 28px",
             display: "flex",
-            justifyContent: "space-between",
+            gap: 24,
             alignItems: "center",
           }}
         >
-          <h2
-            style={{
-              color: "white",
-              fontFamily: "Inter",
-              fontSize: 20,
-              margin: 0,
-            }}
-          >
-            Start New TSR
-          </h2>
-          <span
-            style={{
-              fontSize: 11,
-              background: "rgba(255,255,255,0.15)",
-              color: "var(--gold)",
-              padding: "4px 10px",
-              borderRadius: 6,
-              fontWeight: 700,
-            }}
-          >
-            20+ ADVANCED LEGAL FIELDS
-          </span>
+          {[
+            { key: "basic", label: "I. Basic Info" },
+            { key: "documents", label: "III. Title Flow" },
+            { key: "otherProvisions", label: "V. Other Provisions" },
+            { key: "waitingReport", label: "VI. Waiting Report" },
+          ].map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setActiveTab(t.key)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: activeTab === t.key ? "white" : "rgba(255,255,255,0.5)",
+                fontSize: 14,
+                fontWeight: activeTab === t.key ? 700 : 500,
+                cursor: "pointer",
+                padding: "6px 0",
+                borderBottom:
+                  activeTab === t.key
+                    ? "2px solid white"
+                    : "2px solid transparent",
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
         <form onSubmit={handleSubmit} style={{ padding: 28 }}>
-          {/* TAB 1: BASIC INFO */}
           {activeTab === "basic" && (
-            <div
-              className="animate-in"
-              style={{ display: "flex", flexDirection: "column", gap: 20 }}
-            >
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: 20,
-                }}
-              >
-                <div>
-                  <label style={lbl}>Author</label>
-                  <select
-                    name="author"
-                    value={form.author}
-                    onChange={handleChange}
-                    style={inp}
-                  >
-                    {[
-                      "Narayan",
-                      "Priya Kulkarni",
-                      "Arun Patil",
-                      "Rohan Sane",
-                    ].map((a) => (
-                      <option key={a}>{a}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={lbl}>
-                    Application ID <span style={{ color: "red" }}>*</span>
-                  </label>
-                  <input
-                    name="appId"
-                    value={form.appId}
-                    onChange={handleChange}
-                    placeholder="e.g. 77000244168"
-                    style={{
-                      ...inp,
-                      borderColor: errors.appId ? "#dc2626" : "var(--border)",
-                    }}
-                  />
-                  {errors.appId && (
-                    <span
-                      style={{
-                        color: "#dc2626",
-                        fontSize: 11,
-                        display: "block",
-                        marginTop: 4,
-                      }}
-                    >
-                      {errors.appId}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <label style={lbl}>Ref. No.</label>
-                  <input
-                    name="refNo"
-                    value={form.refNo}
-                    onChange={handleChange}
-                    placeholder="e.g. IHFC/TSR/691/2026"
-                    style={inp}
-                  />
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: 20,
-                }}
-              >
-                <div>
-                  <label style={lbl}>
-                    Initiation Date <span style={{ color: "red" }}>*</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="initiationDate"
-                    value={form.initiationDate}
-                    onChange={handleChange}
-                    style={{
-                      ...inp,
-                      borderColor: errors.initiationDate
-                        ? "#dc2626"
-                        : "var(--border)",
-                    }}
-                  />
-                  {errors.initiationDate && (
-                    <span
-                      style={{
-                        color: "#dc2626",
-                        fontSize: 11,
-                        display: "block",
-                        marginTop: 4,
-                      }}
-                    >
-                      {errors.initiationDate}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <label style={lbl}>
-                    Applicant <span style={{ color: "red" }}>*</span>
-                  </label>
-                  <input
-                    name="applicant"
-                    value={form.applicant}
-                    onChange={handleChange}
-                    placeholder="Primary applicant name"
-                    style={{
-                      ...inp,
-                      borderColor: errors.applicant
-                        ? "#dc2626"
-                        : "var(--border)",
-                    }}
-                  />
-                  {errors.applicant && (
-                    <span
-                      style={{
-                        color: "#dc2626",
-                        fontSize: 11,
-                        display: "block",
-                        marginTop: 4,
-                      }}
-                    >
-                      {errors.applicant}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <label style={lbl}>Co-Applicant</label>
-                  <input
-                    name="coApplicant"
-                    value={form.coApplicant}
-                    onChange={handleChange}
-                    placeholder="e.g. Mr. Subhash Ganpat Sarak"
-                    style={inp}
-                  />
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: 20,
-                }}
-              >
-                <div>
-                  <label style={lbl}>Existing Owner (Title Holder)</label>
-                  <input
-                    name="existingOwner"
-                    value={form.existingOwner}
-                    onChange={handleChange}
-                    placeholder="e.g. Mr. Subhash Ganpat Sarak"
-                    style={inp}
-                  />
-                </div>
-                <div>
-                  <label style={lbl}>Transaction Type</label>
-                  <input
-                    name="transactionType"
-                    value={form.transactionType}
-                    onChange={handleChange}
-                    placeholder="e.g. LAP or Home Loan"
-                    style={inp}
-                  />
-                </div>
-                <div>
-                  <label style={lbl}>Bank Branch Office</label>
-                  <input
-                    name="bankBranch"
-                    value={form.bankBranch}
-                    onChange={handleChange}
-                    placeholder="e.g. Hadapsar Branch, Pune"
-                    style={inp}
-                  />
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: 20,
-                }}
-              >
-                <div>
-                  <label style={lbl}>Branch Office</label>
-                  <select
-                    name="branch"
-                    value={form.branch}
-                    onChange={handleChange}
-                    style={inp}
-                  >
-                    {["Main", "Pune", "Mumbai", "Nashik", "Nagpur"].map((b) => (
-                      <option key={b}>{b}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={lbl}>Executive Mobile</label>
-                  <input
-                    name="executiveMobile"
-                    value={form.executiveMobile}
-                    onChange={handleChange}
-                    placeholder="10-digit mobile"
-                    style={inp}
-                  />
-                </div>
-                <div>
-                  <label style={lbl}>Executive Email</label>
-                  <input
-                    type="email"
-                    name="executiveEmail"
-                    value={form.executiveEmail}
-                    onChange={handleChange}
-                    placeholder="exec@company.com"
-                    style={inp}
-                  />
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: 20,
-                }}
-              >
-                <div>
-                  <label style={lbl}>Municipal Property No.</label>
-                  <input
-                    name="municipalPropertyNo"
-                    value={form.municipalPropertyNo}
-                    onChange={handleChange}
-                    placeholder="e.g. P/M/83/01239000"
-                    style={inp}
-                  />
-                </div>
-                <div>
-                  <label style={lbl}>RCC Construction standing area</label>
-                  <input
-                    name="rccConstructionArea"
-                    value={form.rccConstructionArea}
-                    onChange={handleChange}
-                    placeholder="e.g. 750 sq. ft."
-                    style={inp}
-                  />
-                </div>
-                <div>
-                  <label style={lbl}>Municipal Council Limits</label>
-                  <input
-                    name="municipalCouncil"
-                    value={form.municipalCouncil}
-                    onChange={handleChange}
-                    placeholder="e.g. Fursungi-Uruli Devachi Municipal Council"
-                    style={inp}
-                  />
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: 20,
-                }}
-              >
-                <div>
-                  <label style={lbl}>Village</label>
-                  <input
-                    name="village"
-                    value={form.village}
-                    onChange={handleChange}
-                    placeholder="e.g. Uruli Devachi"
-                    style={inp}
-                  />
-                </div>
-                <div>
-                  <label style={lbl}>Taluka</label>
-                  <input
-                    name="taluka"
-                    value={form.taluka}
-                    onChange={handleChange}
-                    placeholder="e.g. Haveli"
-                    style={inp}
-                  />
-                </div>
-                <div>
-                  <label style={lbl}>District</label>
-                  <input
-                    name="district"
-                    value={form.district}
-                    onChange={handleChange}
-                    placeholder="e.g. Pune"
-                    style={inp}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={lbl}>
-                  Detailed Survey / Hissa No descriptions
-                </label>
-                <div
-                  style={{
-                    background: "#f8fafc",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 12,
-                    padding: 20,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 20,
-                    }}
-                  >
-                    <h4
-                      style={{
-                        margin: 0,
-                        fontSize: 16,
-                        fontWeight: 700,
-                      }}
-                    >
-                      Land Parcels
-                    </h4>
-
-                    <button
-                      type="button"
-                      onClick={addParcel}
-                      style={{
-                        background: "var(--black)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 8,
-                        padding: "8px 14px",
-                        cursor: "pointer",
-                        fontWeight: 600,
-                      }}
-                    >
-                      + Add Survey/Hissa
-                    </button>
-                  </div>
-
-                  {form.landParcels.map((parcel, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        border: "1px solid #e2e8f0",
-                        borderRadius: 10,
-                        padding: 16,
-                        marginBottom: 16,
-                        background: "white",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          marginBottom: 12,
-                        }}
-                      >
-                        <strong>Parcel #{index + 1}</strong>
-
-                        {form.landParcels.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeParcel(index)}
-                            style={{
-                              background: "#fee2e2",
-                              color: "#dc2626",
-                              border: "none",
-                              borderRadius: 6,
-                              padding: "6px 10px",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr 1fr 1fr",
-                          gap: 16,
-                        }}
-                      >
-                        <input
-                          placeholder="Survey / Gat No"
-                          value={parcel.surveyNo}
-                          onChange={(e) =>
-                            handleParcelChange(
-                              index,
-                              "surveyNo",
-                              e.target.value,
-                            )
-                          }
-                          style={inp}
-                        />
-
-                        <input
-                          placeholder="Hissa No"
-                          value={parcel.hissaNo}
-                          onChange={(e) =>
-                            handleParcelChange(index, "hissaNo", e.target.value)
-                          }
-                          style={inp}
-                        />
-
-                        <input
-                          placeholder="Area Value"
-                          value={parcel.area}
-                          onChange={(e) =>
-                            handleParcelChange(index, "area", e.target.value)
-                          }
-                          style={inp}
-                        />
-
-                        <select
-                          value={parcel.unit}
-                          onChange={(e) =>
-                            handleParcelChange(index, "unit", e.target.value)
-                          }
-                          style={inp}
-                        >
-                          <option value="">Select Unit</option>
-                          <option value="Sq. Mtr">Sq. Mtr</option>
-                          <option value="Sq. Ft">Sq. Ft</option>
-                          <option value="Are">Are</option>
-                          <option value="Hectare">Hectare</option>
-                          <option value="Acre">Acre</option>
-                          <option value="Guntha">Guntha</option>
-                        </select>
-                      </div>
-
-                      <textarea
-                        placeholder="Remarks"
-                        value={parcel.remarks}
-                        onChange={(e) =>
-                          handleParcelChange(index, "remarks", e.target.value)
-                        }
-                        style={{
-                          ...inp,
-                          marginTop: 12,
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* BOUNDARIES BOX */}
-              <div
-                style={{
-                  background: "#f8fafc",
-                  padding: 20,
-                  borderRadius: 12,
-                  border: "1px solid #e2e8f0",
-                }}
-              >
-                <h4
-                  style={{
-                    margin: "0 0 16px 0",
-                    fontFamily: "Inter",
-                    color: "var(--black)",
-                    fontSize: 15,
-                  }}
-                >
-                  Physical Boundaries (Legal descriptions)
-                </h4>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 16,
-                  }}
-                >
-                  <div>
-                    <label style={lbl}>Boundary East</label>
-                    <input
-                      name="boundaryEast"
-                      value={form.boundaryEast}
-                      onChange={handleChange}
-                      placeholder="On or towards East"
-                      style={inp}
-                    />
-                  </div>
-                  <div>
-                    <label style={lbl}>Boundary West</label>
-                    <input
-                      name="boundaryWest"
-                      value={form.boundaryWest}
-                      onChange={handleChange}
-                      placeholder="On or towards West"
-                      style={inp}
-                    />
-                  </div>
-                  <div>
-                    <label style={lbl}>Boundary South</label>
-                    <input
-                      name="boundarySouth"
-                      value={form.boundarySouth}
-                      onChange={handleChange}
-                      placeholder="On or towards South"
-                      style={inp}
-                    />
-                  </div>
-                  <div>
-                    <label style={lbl}>Boundary North</label>
-                    <input
-                      name="boundaryNorth"
-                      value={form.boundaryNorth}
-                      onChange={handleChange}
-                      placeholder="On or towards North"
-                      style={inp}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <TSRBasicInfo
+              form={form}
+              errors={errors}
+              handleChange={handleChange}
+              addParcel={addParcel}
+              removeParcel={removeParcel}
+              handleParcelChange={handleParcelChange}
+            />
           )}
 
-
-          {/* TAB 3: DOCUMENTS */}
           {activeTab === "documents" && (
-            <div className="animate-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* OCR Drag-Drop Upload Area */}
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragActive(true);
-        }}
-        onDragLeave={() => setDragActive(false)}
-        onDrop={handleFileDrop}
-        style={{
-          background: "white",
-          border: dragActive
-            ? "2px dashed var(--gold)"
-            : "2px dashed var(--border)",
-          borderRadius: 16,
-          padding: "32px 20px",
-          textAlign: "center",
-          position: "relative",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
-          transition: "all 0.3s ease",
-          overflow: "hidden",
-        }}
-      >
-        {ocrScanning ? (
+            <TSRDocumentsUpload
+              dragActive={dragActive}
+              setDragActive={setDragActive}
+              ocrScanning={ocrScanning}
+              ocrStatus={ocrStatus}
+              fileUploadedName={fileUploadedName}
+              handleFileDrop={handleFileDrop}
+              handleTitleFlowExcel={handleTitleFlowExcel}
+              titleFlowData={titleFlowData}
+            />
+          )}
+
+          {activeTab === "otherProvisions" && (
+            <TSROtherProvisions
+              otherProvisions={otherProvisions}
+              handleProvisionChange={handleProvisionChange}
+            />
+          )}
+
+          {activeTab === "waitingReport" && <TSRWaitingReport />}
+
+          {/* Navigation / Submit Bar */}
           <div
             style={{
-              padding: "20px 0",
+              marginTop: 28,
               display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 16,
+              gap: 12,
+              justifyContent: "space-between",
             }}
           >
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                border: "4px solid #f1f5f9",
-                borderTop: "4px solid var(--black)",
-                borderRadius: "50%",
-                animation: "spin 1s linear infinite",
-              }}
-            />
-            <div
-              style={{
-                fontFamily: "Inter",
-                fontSize: 18,
-                color: "var(--black)",
-                fontWeight: 600,
-              }}
-            >
-              {ocrStatus}
-            </div>
-            <div style={{ fontSize: 13, color: "var(--muted)" }}>
-              Processing file: <strong>{fileUploadedName}</strong>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div
-              style={{
-                marginBottom: 12,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <FolderOpen size={40} color="var(--black)" strokeWidth={1.8} />
-            </div>
-            <h3
-              style={{
-                fontFamily: "Inter",
-                fontSize: 18,
-                color: "var(--black)",
-                margin: "0 0 6px 0",
-              }}
-            >
-              AI Legal Document OCR Uploader
-            </h3>
-            <p
-              style={{
-                color: "var(--muted)",
-                fontSize: 13,
-                margin: "0 0 16px 0",
-                maxWidth: 500,
-                marginLeft: "auto",
-                marginRight: "auto",
-                lineHeight: 1.4,
-              }}
-            >
-              Drag & drop title deeds, e-search receipt GRAS PDFs, or 7/12
-              extracts. AI OCR will scan and extract all boundaries & details
-              instantly!
-            </p>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-              <input
-                type="file"
-                id="fileInp"
-                onChange={handleFileDrop}
-                style={{ display: "none" }}
-                accept=".pdf,.doc,.docx,.jpg,.png"
-              />
-              <label
-                htmlFor="fileInp"
-                style={{
-                  background: "var(--black)",
-                  color: "white",
-                  padding: "10px 24px",
-                  borderRadius: 8,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "inline-block",
-                }}
-              >
-                Browse Files
-              </label>
-            </div>
-          </div>
-        )}
-      </div>
-
-
-            </div>
-          )}
-
-          <div style={{ marginTop: 28, display: "flex", gap: 12, justifyContent: "space-between" }}>
             {activeTab !== "basic" && (
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveTab("basic");
+                onClick={() => {
+                  if (activeTab === "documents") {
+                    setActiveTab("basic");
+                  } else if (activeTab === "otherProvisions") {
+                    setActiveTab("documents");
+                  } else if (activeTab === "waitingReport") {
+                    setActiveTab("otherProvisions");
+                  }
                 }}
                 style={{
-                  background: "transparent",
-                  color: "var(--muted)",
+                  background: "white",
+                  color: "var(--black)",
                   border: "1px solid var(--border)",
-                  padding: "13px 24px",
+                  padding: "12px 24px",
                   borderRadius: 8,
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: 600,
                   cursor: "pointer",
-                  fontFamily: "Inter",
                 }}
               >
-                ➔ Back
+                Back
               </button>
             )}
 
@@ -1047,20 +601,40 @@ export default function TSRInitiation() {
                     background: "white",
                     color: "var(--black)",
                     border: "1px solid var(--black)",
-                    padding: "13px 40px",
+                    padding: "12px 36px",
                     borderRadius: 8,
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: 700,
                     cursor: "pointer",
-                    fontFamily: "Inter",
                   }}
                 >
-                  Next Section ➔
+                  Next Section
                 </button>
               )}
 
-
               {activeTab === "documents" && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveTab("otherProvisions");
+                  }}
+                  style={{
+                    background: "white",
+                    color: "var(--black)",
+                    border: "1px solid var(--black)",
+                    padding: "12px 36px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  Next Section
+                </button>
+              )}
+
+              {activeTab === "otherProvisions" && (
                 <button
                   type="submit"
                   disabled={submitting}
@@ -1068,13 +642,12 @@ export default function TSRInitiation() {
                     background: "var(--black)",
                     color: "white",
                     border: "none",
-                    padding: "13px 40px",
+                    padding: "12px 36px",
                     borderRadius: 8,
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: 700,
                     cursor: submitting ? "not-allowed" : "pointer",
                     opacity: submitting ? 0.7 : 1,
-                    fontFamily: "Inter",
                   }}
                 >
                   {submitting ? "Initiating..." : "Initiate TSR Report"}
@@ -1089,14 +662,14 @@ export default function TSRInitiation() {
       <div
         style={{
           background: "white",
-          borderRadius: 16,
-          boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+          borderRadius: 12,
+          border: "1px solid var(--border)",
           overflow: "hidden",
         }}
       >
         <div
           style={{
-            padding: "20px 28px",
+            padding: "18px 28px",
             borderBottom: "1px solid var(--border)",
             display: "flex",
             justifyContent: "space-between",
@@ -1105,17 +678,17 @@ export default function TSRInitiation() {
         >
           <h2
             style={{
-              fontFamily: "Playfair Display",
-              fontSize: 20,
+              fontSize: 18,
               color: "var(--black)",
               margin: 0,
+              fontWeight: 700,
             }}
           >
             TSR Initiation Records
           </h2>
           <span
             style={{
-              background: "#f1f5f9",
+              background: "#f3f4f6",
               color: "var(--muted)",
               padding: "4px 12px",
               borderRadius: 12,
@@ -1126,15 +699,10 @@ export default function TSRInitiation() {
             {records.length} records
           </span>
         </div>
+
         {records.length === 0 ? (
           <div style={{ padding: 48, textAlign: "center" }}>
-            <div
-              style={{
-                fontFamily: "Playfair Display",
-                fontSize: 18,
-                color: "var(--black)",
-              }}
-            >
+            <div style={{ fontSize: 16, color: "var(--muted)" }}>
               No records yet
             </div>
           </div>
@@ -1148,7 +716,7 @@ export default function TSRInitiation() {
               }}
             >
               <thead>
-                <tr style={{ background: "#f8fafc" }}>
+                <tr style={{ background: "#fafafa" }}>
                   {[
                     "ID",
                     "App ID",
@@ -1238,41 +806,48 @@ export default function TSRInitiation() {
                             );
                           }}
                           style={{
-                            background: "#f1f5f9",
-                            border: "none",
-                            padding: "6px 10px",
+                            background: "white",
+                            border: "1px solid var(--border)",
+                            padding: "6px 12px",
                             borderRadius: 6,
                             cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
                           }}
                           title="View Details"
                         >
-                          👁
+                          View
                         </button>
                         <button
-                          onClick={() => alert("Edit — Phase 2 feature")}
+                          onClick={() => alert("Edit - Phase 2 feature")}
                           style={{
-                            background: "#fef3c7",
-                            border: "none",
-                            padding: "6px 10px",
+                            background: "white",
+                            border: "1px solid var(--border)",
+                            padding: "6px 12px",
                             borderRadius: 6,
                             cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
                           }}
                           title="Edit"
                         >
-                          ✏️
+                          Edit
                         </button>
                         <button
                           onClick={() => handleDelete(r._id)}
                           style={{
-                            background: "#fee2e2",
-                            border: "none",
-                            padding: "6px 10px",
+                            background: "var(--black)",
+                            color: "white",
+                            border: "1px solid var(--black)",
+                            padding: "6px 12px",
                             borderRadius: 6,
                             cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
                           }}
                           title="Delete"
                         >
-                          🗑
+                          Delete
                         </button>
                       </div>
                     </td>
