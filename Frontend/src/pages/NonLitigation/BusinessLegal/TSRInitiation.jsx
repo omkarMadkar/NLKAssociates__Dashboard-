@@ -13,7 +13,7 @@ import { StatusBadge } from "../../../components/TSRShared";
 import TSRBasicInfo from "../../../models/TSRBasicInfo";
 import TSRDocumentsUpload from "../../../models/TSRDocumentsUpload";
 import TSROtherProvisions from "../../../models/TSROtherProvision";
-import TSRWaitingReport from "../../../models/TSRWaitingReport";
+
 
 const INITIAL = {
   author: "Narayan",
@@ -494,7 +494,7 @@ export default function TSRInitiation() {
             { key: "basic", label: "I. Basic Info" },
             { key: "documents", label: "III. Title Flow" },
             { key: "otherProvisions", label: "V. Other Provisions" },
-            { key: "waitingReport", label: "VI. Waiting Report" },
+
           ].map((t) => (
             <button
               key={t.key}
@@ -551,7 +551,7 @@ export default function TSRInitiation() {
             />
           )}
 
-          {activeTab === "waitingReport" && <TSRWaitingReport />}
+
 
           {/* Navigation / Submit Bar */}
           <div
@@ -570,8 +570,6 @@ export default function TSRInitiation() {
                     setActiveTab("basic");
                   } else if (activeTab === "otherProvisions") {
                     setActiveTab("documents");
-                  } else if (activeTab === "waitingReport") {
-                    setActiveTab("otherProvisions");
                   }
                 }}
                 style={{
