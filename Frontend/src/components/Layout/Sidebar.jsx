@@ -125,6 +125,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
       {/* Nav */}
       <nav
+        className="no-scrollbar"
         style={{
           flex: 1,
           padding: "14px 10px",

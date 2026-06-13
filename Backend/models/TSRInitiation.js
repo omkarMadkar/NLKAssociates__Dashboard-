@@ -82,6 +82,11 @@ const TSRInitiationSchema = new mongoose.Schema(
       ref: "TSRTitleFlow",
       default: null,
     },
+    waitingReportId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TSRWaitingReport",
+      default: null,
+    },
 
     // Uploaded documents tracking
     uploadedDocuments: [

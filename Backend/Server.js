@@ -15,6 +15,7 @@ const tsrRoutes = require('./routes/tsrRoutes');
 const tsrInitiationRoutes = require('./routes/tsrInitiationRoutes');
 const tsrOtherProvisionRoutes = require("./routes/tsrOtherProvisionRoutes");
 const tsrTitleFlowRoutes = require("./routes/tsrTitleFlowRoutes");
+const tsrWaitingReportRoutes = require("./routes/tsrWaitingReportRoutes");
 const approvalRoutes = require('./routes/approvalRoutes');
 const path = require('path');
 const fs = require('fs');
@@ -53,7 +54,17 @@ app.use('/api/tsr-initiation', tsrInitiationRoutes);
 app.use('/api/approvals', approvalRoutes);
 app.use("/api/tsr-other-provisions",tsrOtherProvisionRoutes);
 app.use("/api/tsr-title-flow",tsrTitleFlowRoutes);
+app.use("/api/tsr-waiting-report", tsrWaitingReportRoutes);
 
+
+// ERROR HANDLER
+app.use((err, req, res, next) => {
+  console.error("Global Error Handler caught:", err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
+});
 
 // PORT
 const PORT = process.env.PORT || 5000;

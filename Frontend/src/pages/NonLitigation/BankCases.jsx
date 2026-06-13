@@ -13,7 +13,7 @@ const STATUS_STYLES = {
   assigned:       { bg: '#dbeafe', color: '#1d4ed8', label: 'Assigned' },
   in_progress:    { bg: '#fef3c7', color: '#d97706', label: 'In Progress' },
   draft_ready:    { bg: '#ede9fe', color: '#7c3aed', label: 'Draft Ready' },
-  under_review:   { bg: '#ffedd5', color: '#ea580c', label: 'Under Review' },
+  under_review:   { bg: '#fee2e2', color: '#dc2626', label: 'Under Review' },
   approved:       { bg: '#dcfce7', color: '#16a34a', label: 'Approved' },
   shared_to_bank: { bg: '#cffafe', color: '#0e7490', label: 'Shared' },
 };
@@ -26,7 +26,7 @@ function StatusBadge({ status }) {
 export default function BankCases() {
   const { bank } = useParams();
   const navigate = useNavigate();
-  const meta = BANK_META[bank] || { name: bank, color: '#1a2744', bg: '#f1f5f9', icon: '🏦' };
+  const meta = BANK_META[bank] || { name: bank, color: '#000000', bg: '#f1f5f9', icon: '🏦' };
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');

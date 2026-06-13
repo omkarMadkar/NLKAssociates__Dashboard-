@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --navy: #1a2744;
+  --navy: #000000;
   --gold: #c9a84c;
   --gold-light: #e8c96e;
   --accent: #2563eb;
@@ -30,3 +30,12 @@ body { background: var(--bg); color: var(--text); margin: 0; }
 }
 .animate-in { animation: fadeSlideUp 0.4s ease forwards; }
 .animate-in-delay { animation: fadeSlideUp 0.4s ease forwards; animation-delay: calc(var(--i, 0) * 0.08s); opacity: 0; }
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

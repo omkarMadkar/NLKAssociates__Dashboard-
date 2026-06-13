@@ -55,7 +55,11 @@ const createTSRInitiation = async (req, res) => {
 // 3. GET ALL
 const getTSRInitiations = async (req, res) => {
   try {
-    const records = await TSRInitiation.find().sort({ createdAt: -1 });
+    const records = await TSRInitiation.find()
+      .populate('otherProvisionId')
+      .populate('waitingReportId')
+      .populate('titleFlowId')
+      .sort({ createdAt: -1 });
     res.json({ success: true, data: records });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -65,7 +69,10 @@ const getTSRInitiations = async (req, res) => {
 // 4. GET BY ID
 const getTSRInitiationById = async (req, res) => {
   try {
-    const record = await TSRInitiation.findById(req.params.id);
+    const record = await TSRInitiation.findById(req.params.id)
+      .populate('otherProvisionId')
+      .populate('waitingReportId')
+      .populate('titleFlowId');
     if (!record) return res.status(404).json({ success: false, message: 'Record not found' });
     res.json({ success: true, data: record });
   } catch (err) {

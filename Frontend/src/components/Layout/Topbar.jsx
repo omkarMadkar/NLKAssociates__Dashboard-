@@ -10,9 +10,9 @@ const BREADCRUMBS = {
 };
 
 const ROLE_COLORS = {
-  admin: { bg: '#dbeafe', color: '#1d4ed8', label: 'Admin' },
-  staff: { bg: '#dcfce7', color: '#15803d', label: 'Staff' },
-  senior: { bg: '#fef9c3', color: '#854d0e', label: 'NLK Sir' },
+  admin: { bg: '#f1f5f9', color: '#334155', label: 'Admin' },
+  staff: { bg: '#f8fafc', color: '#475569', label: 'Staff' },
+  senior: { bg: '#000000', color: '#ffffff', label: 'NLK Sir' },
 };
 
 export default function Topbar() {
@@ -34,7 +34,15 @@ export default function Topbar() {
         ))}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ padding: '4px 12px', borderRadius: 20, background: rc.bg, color: rc.color, fontSize: 12, fontWeight: 600 }}>
+        <span style={{ 
+          padding: '4px 12px', 
+          borderRadius: 20, 
+          background: rc.bg, 
+          color: rc.color, 
+          fontSize: 12, 
+          fontWeight: 600,
+          border: rc.bg === '#000000' ? 'none' : '1px solid #e2e8f0'
+        }}>
           {rc.label}
         </span>
         <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--navy)',
