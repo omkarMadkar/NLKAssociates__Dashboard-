@@ -17,9 +17,21 @@ function StatusBadge({ status }) {
 export default function TSRDrafting() {
   const [initiations, setInitiations] = useState([]);
   const [selectedCase, setSelectedCase] = useState('');
-  const [templateType, setTemplateType] = useState('English Format');
+  const [templateType, setTemplateType] = useState('TSR Draft (English)');
   const [draftContent, setDraftContent] = useState('');
   const [drafts, setDrafts] = useState([]);
+  const [waitingReport, setWaitingReport] = useState({
+    chalanNo: '',
+    date: '',
+    reportSrNo: '',
+    documents: [
+      { id: Date.now() + 1, srNo: 1, name: 'Sale Deed', available: 'No', remarks: '' },
+      { id: Date.now() + 2, srNo: 2, name: 'Index II', available: 'No', remarks: '' },
+      { id: Date.now() + 3, srNo: 3, name: '7/12 Extract', available: 'No', remarks: '' },
+      { id: Date.now() + 4, srNo: 4, name: 'Property Card', available: 'No', remarks: '' },
+      { id: Date.now() + 5, srNo: 5, name: 'Tax Receipt', available: 'No', remarks: '' }
+    ]
+  });
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -45,13 +57,35 @@ export default function TSRDrafting() {
   const selectedOpt = initiations.find(i => i._id === selectedCase);
   const refNo = selectedOpt?.refNo || 'Auto-generated';
 
+  const handleAddDoc = () => {
+    setWaitingReport(prev => ({
+      ...prev,
+      documents: [...prev.documents, { id: Date.now(), srNo: prev.documents.length + 1, name: '', available: 'No', remarks: '' }]
+    }));
+  };
+  
+  const handleDocChange = (index, field, value) => {
+    setWaitingReport(prev => {
+      const docs = [...prev.documents];
+      docs[index][field] = value;
+      return { ...prev, documents: docs };
+    });
+  };
+  
+  const handleRemoveDoc = (index) => {
+    setWaitingReport(prev => {
+      const docs = prev.documents.filter((_, i) => i !== index).map((d, i) => ({...d, srNo: i + 1}));
+      return { ...prev, documents: docs };
+    });
+  };
+
   const handleGenerate = () => {
     if (!selectedCase) { alert('Please select an initialized TSR first.'); return; }
     setGenerating(true);
     
     setTimeout(() => {
       let content = '';
-      if (templateType === 'English Format') {
+      if (templateType === 'TSR Draft (English)') {
         content = generateEnglishTSR(selectedOpt);
       } else {
         content = generateMarathiTSR(selectedOpt);
@@ -62,7 +96,9 @@ export default function TSRDrafting() {
   };
 
   const handleSave = () => {
-    if (!draftContent.trim()) { alert('Draft content is empty.'); return; }
+    const isWaiting = templateType === 'Waiting Draft' || templateType === 'Pending Report';
+    const contentToSave = isWaiting ? JSON.stringify(waitingReport) : draftContent;
+    if (!contentToSave.trim() || contentToSave === '""') { alert('Draft content is empty.'); return; }
     setSaving(true);
     setTimeout(() => {
       const newDraft = {
@@ -74,7 +110,7 @@ export default function TSRDrafting() {
         status: 'draft',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        content: draftContent,
+        content: contentToSave,
       };
       setDrafts(p => [newDraft, ...p]);
       setSaving(false);
@@ -83,7 +119,9 @@ export default function TSRDrafting() {
   };
 
   const handleSubmit = () => {
-    if (!draftContent.trim()) { alert('Draft content is empty.'); return; }
+    const isWaiting = templateType === 'Waiting Draft' || templateType === 'Pending Report';
+    const contentToSave = isWaiting ? JSON.stringify(waitingReport) : draftContent;
+    if (!contentToSave.trim() || contentToSave === '""') { alert('Draft content is empty.'); return; }
     setSubmitting(true);
     setTimeout(() => {
       const newDraft = {
@@ -95,7 +133,7 @@ export default function TSRDrafting() {
         status: 'submitted',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        content: draftContent,
+        content: contentToSave,
       };
       setDrafts(p => [newDraft, ...p]);
       setDraftContent('');
@@ -117,6 +155,45 @@ export default function TSRDrafting() {
     }
     
     // In Phase 2 we use window.print to export PDF, later we can add server-side PDF generation.
+    
+    let htmlBody = text;
+    const isWaiting = text.trim().startsWith('{') && text.includes('chalanNo');
+    
+    if (isWaiting) {
+      try {
+        const data = JSON.parse(text);
+        htmlBody = `
+          <h2 style="text-align: center; text-decoration: underline;">${data.reportSrNo ? 'Waiting Report / Pending Report' : 'Waiting Report'}</h2>
+          <table style="width:100%; margin-bottom: 20px;">
+            <tr>
+              <td><strong>Chalan No:</strong> ${data.chalanNo || 'N/A'}</td>
+              <td style="text-align: right;"><strong>Date:</strong> ${data.date || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td><strong>Report Sr No:</strong> ${data.reportSrNo || 'N/A'}</td>
+              <td></td>
+            </tr>
+          </table>
+          <table border="1" cellpadding="8" style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 20px;">
+            <tr style="background: #f1f5f9;">
+              <th style="width: 50px;">Sr. No</th>
+              <th>Document Name / No.</th>
+              <th style="width: 80px;">Available</th>
+              <th>Remarks</th>
+            </tr>
+            ${data.documents.map(d => `
+              <tr>
+                <td style="text-align: center;">${d.srNo}</td>
+                <td>${d.name || '-'}</td>
+                <td style="text-align: center;">${d.available}</td>
+                <td>${d.remarks || '-'}</td>
+              </tr>
+            `).join('')}
+          </table>
+        `;
+      } catch(e) { console.error('Failed to parse waiting report JSON for PDF', e); }
+    }
+
     const win = window.open('', '_blank');
     win.document.write(`
       <html>
@@ -212,7 +289,7 @@ export default function TSRDrafting() {
           </div>
         </div>
 
-        <div class="content">${text}</div>
+        <div class="content">${htmlBody}</div>
 
         <div class="no-print" style="text-align: center; margin-top: 30px; position: sticky; bottom: 20px;">
           <button onclick="window.print()" style="padding: 12px 30px; background: #1e3c72; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Print / Save as PDF</button>
@@ -260,27 +337,92 @@ export default function TSRDrafting() {
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>Format Type</label>
               <select value={templateType} onChange={e => setTemplateType(e.target.value)} style={inputStyle}>
-                <option>English Format</option>
-                <option>Marathi Format</option>
+                <option>TSR Draft (English)</option>
+                <option>TSR Draft (Marathi)</option>
+                <option>Waiting Draft</option>
+                <option>Pending Report</option>
               </select>
             </div>
           </div>
 
-          {/* Draft Textarea */}
+          {/* Draft Textarea or Waiting Report Form */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>TSR Draft Content</label>
-              <span style={{ fontSize: 16 }}>📝</span>
-            </div>
-            <textarea value={draftContent} onChange={e => setDraftContent(e.target.value)}
-              placeholder="Click 'Generate Draft' to compile dynamically..."
-              rows={12} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'monospace', lineHeight: 1.6, minHeight: 400 }} />
+            {(templateType === 'Waiting Draft' || templateType === 'Pending Report') ? (
+              <div style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 24, background: '#f8fafc' }}>
+                <h3 style={{ marginTop: 0, color: 'var(--navy)', fontFamily: 'Playfair Display' }}>Waiting Report Details</h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>Chalan No.</label>
+                    <input style={inputStyle} value={waitingReport.chalanNo} onChange={e => setWaitingReport({...waitingReport, chalanNo: e.target.value})} placeholder="e.g. CH-1029" />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>Date</label>
+                    <input type="date" style={inputStyle} value={waitingReport.date} onChange={e => setWaitingReport({...waitingReport, date: e.target.value})} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>Report Sr No.</label>
+                    <input style={inputStyle} value={waitingReport.reportSrNo} onChange={e => setWaitingReport({...waitingReport, reportSrNo: e.target.value})} placeholder="e.g. SR-2026/05" />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <label style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy)' }}>Documents Checklist</label>
+                  <button onClick={handleAddDoc} style={{ background: '#4f46e5', color: 'white', border: 'none', padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>+ Add Row</button>
+                </div>
+
+                <div style={{ overflowX: 'auto', background: 'white', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border)' }}>
+                        <th style={{ padding: '10px', textAlign: 'center', width: 60 }}>Sr. No</th>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>Document No. / Name</th>
+                        <th style={{ padding: '10px', textAlign: 'center', width: 100 }}>Available</th>
+                        <th style={{ padding: '10px', textAlign: 'center', width: 120 }}>Upload</th>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>Remarks</th>
+                        <th style={{ padding: '10px', textAlign: 'center', width: 60 }}>Act</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {waitingReport.documents.map((doc, index) => (
+                        <tr key={doc.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '8px', textAlign: 'center' }}>{doc.srNo}</td>
+                          <td style={{ padding: '8px' }}><input style={{...inputStyle, padding: '6px 10px'}} value={doc.name} onChange={e => handleDocChange(index, 'name', e.target.value)} placeholder="Doc name..." /></td>
+                          <td style={{ padding: '8px' }}>
+                            <select style={{...inputStyle, padding: '6px 10px'}} value={doc.available} onChange={e => handleDocChange(index, 'available', e.target.value)}>
+                              <option>Yes</option>
+                              <option>No</option>
+                            </select>
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'center' }}><input type="file" style={{ fontSize: 11, width: 90 }} /></td>
+                          <td style={{ padding: '8px' }}><input style={{...inputStyle, padding: '6px 10px'}} value={doc.remarks} onChange={e => handleDocChange(index, 'remarks', e.target.value)} placeholder="Reason pending..." /></td>
+                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                            <button onClick={() => handleRemoveDoc(index)} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '4px 8px', borderRadius: 4, cursor: 'pointer' }}>✕</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>TSR Draft Content</label>
+                  <span style={{ fontSize: 16 }}>📝</span>
+                </div>
+                <textarea value={draftContent} onChange={e => setDraftContent(e.target.value)}
+                  placeholder="Click 'Generate Draft' to compile dynamically..."
+                  rows={12} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'monospace', lineHeight: 1.6, minHeight: 400 }} />
+              </>
+            )}
           </div>
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <button onClick={handleGenerate} disabled={generating}
-              style={{ background: generating ? '#a5b4fc' : '#4f46e5', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: generating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={handleGenerate} disabled={generating || templateType === 'Waiting Draft' || templateType === 'Pending Report'}
+              style={{ background: generating ? '#a5b4fc' : '#4f46e5', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: (generating || templateType === 'Waiting Draft' || templateType === 'Pending Report') ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
               🤖 {generating ? 'Generating Dynamic Draft...' : 'Generate Draft'}
             </button>
             <button onClick={handleSave} disabled={saving}
@@ -332,7 +474,15 @@ export default function TSRDrafting() {
                     <td style={{ padding: '14px 16px', color: 'var(--muted)', fontSize: 12 }}>{new Date(d.updatedAt).toLocaleDateString('en-IN')}</td>
                     <td style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => { setDraftContent(d.content); setSelectedCase(''); }} style={{ background: '#f1f5f9', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Edit">✏️</button>
+                        <button onClick={() => { 
+                          setTemplateType(d.templateType);
+                          if (d.templateType === 'Waiting Draft' || d.templateType === 'Pending Report') {
+                            try { setWaitingReport(JSON.parse(d.content)); } catch(e){}
+                          } else {
+                            setDraftContent(d.content); 
+                          }
+                          setSelectedCase(''); 
+                        }} style={{ background: '#f1f5f9', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Edit">✏️</button>
                         <button onClick={() => alert("Previewing: " + d.tsrRefNo)} style={{ background: '#dbeafe', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Preview">👁</button>
                         <button onClick={() => handleExportPDF(d.content)} style={{ background: '#fef3c7', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Export PDF">📄</button>
                         <button onClick={() => handleDeleteDraft(d._id)} style={{ background: '#fee2e2', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }} title="Delete">🗑</button>
