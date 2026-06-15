@@ -41,7 +41,96 @@ export function generateEnglishTSR(data) {
   const south = data.boundarySouth || "[South Boundary]";
   const north = data.boundaryNorth || "[North Boundary]";
 
+  //PART II : List of Documents Submitted for Scrutiny and Legal Opinion
+  const documentList =
+    data.documentList?.length > 0
+      ? data.documentList
+          .map((doc, index) => {
+            const executionDate = doc.executionDate
+              ? new Date(doc.executionDate).toLocaleDateString("en-GB")
+              : "[Date]";
+
+            return `${index + 1}. ${doc.documentType}, dated ${executionDate} executed by ${
+              doc.executedBy || "[Executant]"
+            } to and in favour of ${
+              doc.executedInFavourOf || "[Claimant]"
+            }, which is registered in the office of ${
+              doc.registrationOffice || "[Registration Office]"
+            } under serial number ${
+              doc.registrationNumber || "[Registration No]"
+            }.${doc.remarks ? ` (${doc.remarks})` : ""}`;
+          })
+          .join("\n\n")
+      : "No documents submitted.";
+
+  //PART III : FLOW OF TITLE OF PROPERTY
+  const titleFlow =
+    data.titleFlow?.length > 0
+      ? data.titleFlow
+          .flatMap((flow) => flow.events || [])
+          .sort((a, b) => a.eventNo - b.eventNo)
+          .map((event, index) => {
+            const ownerText =
+              event.currentOwner === "YES"
+                ? ` Thus, ${event.toParty} became owner and in possession of the said property.`
+                : "";
+
+            return `${index + 1}. Thereafter, ${
+              event.fromParty || "[Transferor]"
+            } has executed a ${event.documentType || "[Document Type]"} dated ${
+              event.documentDate || "[Date]"
+            }, thereby sold, transferred and conveyed ${
+              event.propertyDetails || "the property"
+            } to and in favour of ${event.toParty || "[Transferee]"}.
+
+The said ${
+              event.documentType || "document"
+            } is duly registered under Registration No. ${
+              event.registrationNo || "-"
+            } in the office of ${event.srOfficeName || "[SRO]"}.${ownerText}${
+              event.remarks && event.remarks !== "NA"
+                ? ` Remarks: ${event.remarks}`
+                : ""
+            }`;
+          })
+          .join("\n\n")
+      : "No title flow available.";
+
+  //PART IV : EVIDENCE OF THE TITLE OF PROPERTY
+  const titleEvidence =
+    data.titleEvidence?.length > 0
+      ? data.titleEvidence
+          .map((doc, index) => {
+            const executionDate = doc.executionDate
+              ? new Date(doc.executionDate).toLocaleDateString("en-GB")
+              : "[Date]";
+
+            return `${index + 1}. ${doc.documentType}, dated ${executionDate} executed by ${
+              doc.executedBy || "[Executant]"
+            } to and in favour of ${
+              doc.executedInFavourOf || "[Claimant]"
+            }, which is registered in the office of ${
+              doc.registrationOffice || "[Registration Office]"
+            } under serial number ${
+              doc.registrationNumber || "[Registration No]"
+            }.${doc.remarks ? ` (${doc.remarks})` : ""}`;
+          })
+          .join("\n\n")
+      : "No documents submitted.";
+
+  //PART V : OTHER PROVISIONS
+  const otherProvisions =
+    data.otherProvision?.answers?.length > 0
+      ? data.otherProvision.answers
+          .map((item) => {
+            return `${item.code.padEnd(5)} ${item.question.padEnd(90)} ${
+              item.answer || "-"
+            }`;
+          })
+          .join("\n")
+      : "No Other Provisions Available.";
   return `TITLE SEARCH REPORT & LEGAL SCRUTINY REPORT
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Ref. No. : ${refNo}                                 Date : ${dateStr}
@@ -71,10 +160,10 @@ Together with R.C.C. construction standing thereon admeasuring about ${construct
 on ground floor, bearing Property No. ${municipalNo},
 and bounded as follows:
 
-On or towards East  : By ${east}
-On or towards West  : By ${west}
-On or towards South : By ${south}
-On or towards North : By ${north}
+On or towards East  : ${east}
+On or towards West  : ${west}
+On or towards South : ${south}
+On or towards North : ${north}
 
 Hereinafter, referred to as the "Subject Property".
 
@@ -82,40 +171,28 @@ Hereinafter, referred to as the "Subject Property".
 
 • PART II : LIST OF DOCUMENTS SUBMITTED BEFORE ME FOR SCRUTINY AND LEGAL OPINION :
 
-1. [User to list uploaded documents here]
+${documentList}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 • PART III : FLOW OF TITLE OF PROPERTY.
 
-[User to detail the chain of ownership over the last 30 years based on uploaded Index II and Sale Deeds]
+Upon perusal of the documents placed on record and on the basis of the search conducted on the official IGR website, the chain of title in respect of the subject property is traced as follows:
+
+${titleFlow}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 • PART IV : EVIDENCE OF THE TITLE OF PROPERTY
 
-[User to verify if the documents submitted reflect clear title and mutations]
+${titleEvidence}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 • PART V : OTHER PROVISIONS
 
-5.1  Urban Land Ceiling Applicable?         : No.
-5.2  Any Minor's claim/share?               : No.
-5.3  Affected by Tenancy regulations?        : No.
-5.4  Converted to Non-Agricultural (NA)?    : [Yes/No]
-5.5  Up to date tax/land revenue paid?      : [Yes/No]
-5.6  Original documents scrutinized?        : Yes.
-5.7  Required documents for mortgage?       : Yes.
-5.8  Previous owners transfer competency?   : Yes.
-5.9  Proposed owners competency?            : Yes.
-5.10 Tenure of the land                     : [Class 1 / Class 2]
-5.11 Is land Adivasi/Tribal?                : No.
-5.12 Joint Family Property?                 : No.
-5.13 SARFAESI Act applicable?               : Yes.
-5.14 Reservations / Acquisitions?           : No.
-5.15 Transferred by Power of Attorney?      : [Yes/No]
-5.16 Search Report obtained & submitted?    : Yes.
+${otherProvisions}
+
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -142,6 +219,8 @@ ADVOCATE & NOTARY`;
 
 export function generateMarathiTSR(data) {
   // Can be mapped similarly in Marathi based on Ganesh Sarak sample
+  console.log("TSR DATA:", data);
+  console.log("DOCUMENT LIST:", data.documentList);
   return generateEnglishTSR(data).replace(
     "TITLE SEARCH REPORT & LEGAL SCRUTINY REPORT",
     "TITLE SEARCH REPORT (MARATHI FORMAT)",
@@ -165,17 +244,21 @@ export function generateEnglishWaitingReport(data) {
   const taluka = data.taluka || "[Taluka]";
   const district = data.district || "[District]";
   const municipalCouncil = data.municipalCouncil || "[Municipal Council]";
-  
+
   const wr = data.waitingReportId || {};
   const chalanNo = wr.chalanNo || "N/A";
-  const wrDate = wr.date ? new Date(wr.date).toLocaleDateString("en-IN") : "N/A";
+  const wrDate = wr.date
+    ? new Date(wr.date).toLocaleDateString("en-IN")
+    : "N/A";
   const reportSrNo = wr.reportSrNo || "N/A";
-  
+
   let docListStr = "";
   if (wr.documents && wr.documents.length > 0) {
     docListStr = wr.documents
-      .map(doc => {
-        const attachmentStr = doc.fileName ? `\n      Attachment: ${doc.fileName}` : "";
+      .map((doc) => {
+        const attachmentStr = doc.fileName
+          ? `\n      Attachment: ${doc.fileName}`
+          : "";
         return `[${doc.available === "Yes" ? "✔" : "✘"}] Sr. ${doc.srNo}: ${doc.name}
       Available: ${doc.available}
       Remarks: ${doc.remarks || "None"}${attachmentStr}`;
@@ -245,17 +328,21 @@ export function generateMarathiWaitingReport(data) {
   const taluka = data.taluka || "[तालुका]";
   const district = data.district || "[जिल्हा]";
   const municipalCouncil = data.municipalCouncil || "[नगरपालिका/महानगरपालिका]";
-  
+
   const wr = data.waitingReportId || {};
   const chalanNo = wr.chalanNo || "निरंक";
-  const wrDate = wr.date ? new Date(wr.date).toLocaleDateString("en-IN") : "निरंक";
+  const wrDate = wr.date
+    ? new Date(wr.date).toLocaleDateString("en-IN")
+    : "निरंक";
   const reportSrNo = wr.reportSrNo || "निरंक";
-  
+
   let docListStr = "";
   if (wr.documents && wr.documents.length > 0) {
     docListStr = wr.documents
-      .map(doc => {
-        const attachmentStr = doc.fileName ? `\n      जोडलेले पत्र/फाइल: ${doc.fileName}` : "";
+      .map((doc) => {
+        const attachmentStr = doc.fileName
+          ? `\n      जोडलेले पत्र/फाइल: ${doc.fileName}`
+          : "";
         return `[${doc.available === "Yes" ? "✔" : "✘"}] अनु. क्र. ${doc.srNo}: ${doc.name}
       उपलब्धता: ${doc.available === "Yes" ? "होय" : "नाही"}
       शेरा: ${doc.remarks || "काही नाही"}${attachmentStr}`;

@@ -17,6 +17,10 @@ const tsrOtherProvisionRoutes = require("./routes/tsrOtherProvisionRoutes");
 const tsrTitleFlowRoutes = require("./routes/tsrTitleFlowRoutes");
 const tsrWaitingReportRoutes = require("./routes/tsrWaitingReportRoutes");
 const approvalRoutes = require('./routes/approvalRoutes');
+const tsrDocumentListRoutes = require("./routes/tsrDocumentList");
+const tsrTitleEvidenceRoutes = require("./routes/tsrTitleEvidenceRoutes");
+
+const tsrDraftRoutes = require("./routes/tsrDraftRoutes");
 const path = require('path');
 const fs = require('fs');
 
@@ -55,6 +59,10 @@ app.use('/api/approvals', approvalRoutes);
 app.use("/api/tsr-other-provisions",tsrOtherProvisionRoutes);
 app.use("/api/tsr-title-flow",tsrTitleFlowRoutes);
 app.use("/api/tsr-waiting-report", tsrWaitingReportRoutes);
+app.use("/api/tsr-document-list", tsrDocumentListRoutes);
+app.use("/api/tsr-title-evidence",tsrTitleEvidenceRoutes);
+
+app.use("/api/tsr-draft", tsrDraftRoutes);
 
 
 // ERROR HANDLER

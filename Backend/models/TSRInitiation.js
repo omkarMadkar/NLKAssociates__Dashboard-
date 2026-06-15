@@ -72,16 +72,30 @@ const TSRInitiationSchema = new mongoose.Schema(
       default: "initiated",
     },
 
-    otherProvisionId: {
+    documentList: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "TSROtherProvision",
+      ref: "TSRDocumentList",
       default: null,
     },
+
     titleFlowId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "TSRTitleFlow",
       default: null,
     },
+
+    titleEvidenceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TSRTitleEvidence",
+      default: null,
+    },
+
+    otherProvisionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TSROtherProvision",
+      default: null,
+    },
+
     waitingReportId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "TSRWaitingReport",

@@ -1,61 +1,64 @@
-import { useState, useEffect } from 'react';
-import { 
-  FileText, 
-  Clock, 
-  Sparkles, 
-  Save, 
-  Send, 
-  Download, 
-  Trash2, 
-  Edit2, 
-  Eye, 
+import { useState, useEffect } from "react";
+import {
+  FileText,
+  Clock,
+  Sparkles,
+  Save,
+  Send,
+  Download,
+  Trash2,
+  Edit2,
+  Eye,
   FileEdit,
-  ClipboardList
-} from 'lucide-react';
-import API from '../../../api/axios';
-import { 
-  generateEnglishTSR, 
-  generateMarathiTSR, 
-  generateEnglishWaitingReport, 
-  generateMarathiWaitingReport 
-} from '../../../utils/tsrTemplateEngine';
+  ClipboardList,
+} from "lucide-react";
+import API from "../../../api/axios";
+import {
+  generateEnglishTSR,
+  generateMarathiTSR,
+  generateEnglishWaitingReport,
+  generateMarathiWaitingReport,
+} from "../../../utils/tsrTemplateEngine";
 
 const STATUS_STYLES = {
-  draft:     { bg: '#f1f5f9', color: '#475569', label: 'Draft' },
-  submitted: { bg: '#e0f2fe', color: '#0369a1', label: 'Submitted' },
-  approved:  { bg: '#dcfce7', color: '#15803d', label: 'Approved' },
-  rejected:  { bg: '#fee2e2', color: '#b91c1c', label: 'Rejected' },
+  draft: { bg: "#f1f5f9", color: "#475569", label: "Draft" },
+  submitted: { bg: "#e0f2fe", color: "#0369a1", label: "Submitted" },
+  approved: { bg: "#dcfce7", color: "#15803d", label: "Approved" },
+  rejected: { bg: "#fee2e2", color: "#b91c1c", label: "Rejected" },
 };
 
 function StatusBadge({ status }) {
   const s = STATUS_STYLES[status] || STATUS_STYLES.draft;
   return (
-    <span style={{ 
-      padding: '4px 12px', 
-      borderRadius: '20px', 
-      fontSize: '11px', 
-      fontWeight: 600, 
-      background: s.bg, 
-      color: s.color,
-      display: 'inline-flex',
-      alignItems: 'center'
-    }}>
+    <span
+      style={{
+        padding: "4px 12px",
+        borderRadius: "20px",
+        fontSize: "11px",
+        fontWeight: 600,
+        background: s.bg,
+        color: s.color,
+        display: "inline-flex",
+        alignItems: "center",
+      }}
+    >
       {s.label}
     </span>
   );
 }
 
 export default function TSRDrafting() {
-  const [draftType, setDraftType] = useState('tsr'); // 'tsr' or 'waiting'
+  const [draftType, setDraftType] = useState("tsr"); // 'tsr' or 'waiting'
   const [initiations, setInitiations] = useState([]);
-  const [selectedCase, setSelectedCase] = useState('');
-  const [templateType, setTemplateType] = useState('English Format');
-  const [draftContent, setDraftContent] = useState('');
-  
+  const [selectedCase, setSelectedCase] = useState("");
+  const [templateType, setTemplateType] = useState("English Format");
+  const [draftContent, setDraftContent] = useState("");
+  const [draftData, setDraftData] = useState(null);
+
   // Persist drafts to localStorage to preserve across page reloads
   const [drafts, setDrafts] = useState(() => {
     try {
-      const saved = localStorage.getItem('nlk_tsr_drafts');
+      const saved = localStorage.getItem("nlk_tsr_drafts");
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -63,7 +66,7 @@ export default function TSRDrafting() {
   });
 
   useEffect(() => {
-    localStorage.setItem('nlk_tsr_drafts', JSON.stringify(drafts));
+    localStorage.setItem("nlk_tsr_drafts", JSON.stringify(drafts));
   }, [drafts]);
 
   const [generating, setGenerating] = useState(false);
@@ -76,115 +79,149 @@ export default function TSRDrafting() {
 
   const fetchInitiations = async () => {
     try {
-      const { data } = await API.get('/tsr-initiation/list', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      const { data } = await API.get("/tsr-initiation/list", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       if (data.success) {
         setInitiations(data.data);
       }
     } catch (err) {
-      console.error('Failed to fetch TSR Initiations', err);
+      console.error("Failed to fetch TSR Initiations", err);
     }
   };
 
-  const selectedOpt = initiations.find(i => i._id === selectedCase);
-  const refNo = selectedOpt?.refNo || 'Auto-generated';
+  const selectedOpt = initiations.find((i) => i._id === selectedCase);
+  const refNo = selectedOpt?.refNo || "Auto-generated";
 
   const handleDraftTypeChange = (type) => {
     setDraftType(type);
-    setDraftContent('');
-    setSelectedCase('');
+    setDraftContent("");
+    setSelectedCase("");
   };
 
-  const handleGenerate = () => {
-    if (!selectedCase) { 
-      alert(draftType === 'tsr' ? 'Please select an initialized TSR first.' : 'Please select an initialized TSR / Waiting Report first.'); 
-      return; 
+  const handleGenerate = async () => {
+    if (!selectedCase) {
+      alert("Please select a TSR");
+      return;
     }
-    setGenerating(true);
-    
-    setTimeout(() => {
-      let content = '';
-      if (draftType === 'tsr') {
-        if (templateType === 'English Format') {
-          content = generateEnglishTSR(selectedOpt);
-        } else {
-          content = generateMarathiTSR(selectedOpt);
-        }
-      } else {
-        if (templateType === 'English Format') {
-          content = generateEnglishWaitingReport(selectedOpt);
-        } else {
-          content = generateMarathiWaitingReport(selectedOpt);
-        }
+
+    try {
+      setGenerating(true);
+
+      const { data } = await API.get(`/tsr-draft/generate/${selectedCase}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (!data.success) {
+        throw new Error("Failed to generate draft");
       }
+
+      setDraftData(data.data);
+
+      let content = "";
+
+      if (draftType === "tsr") {
+        content =
+          templateType === "English Format"
+            ? generateEnglishTSR(data.data)
+            : generateMarathiTSR(data.data);
+      } else {
+        content =
+          templateType === "English Format"
+            ? generateEnglishWaitingReport(data.data)
+            : generateMarathiWaitingReport(data.data);
+      }
+
       setDraftContent(content);
+      console.log("DOCUMENT LIST:", data.data.documentList);
+      console.log("TITLE FLOW:", data.data.titleFlow);
+      console.log("TITLE EVIDENCE:", data.data.titleEvidence);
+      console.log("WAITING REPORT:", data.data.waitingReport);
+      console.log("OTHER PROVISION:", data.data.otherProvision);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to generate draft");
+    } finally {
       setGenerating(false);
-    }, 800);
+    }
   };
 
   const handleSave = () => {
-    if (!draftContent.trim()) { alert('Draft content is empty.'); return; }
+    if (!draftContent.trim()) {
+      alert("Draft content is empty.");
+      return;
+    }
     setSaving(true);
     setTimeout(() => {
       const newDraft = {
         _id: `draft_${Date.now()}`,
         tsrRefNo: refNo,
-        appId: selectedOpt?.appId || 'Manual',
-        applicant: selectedOpt?.applicant || 'Manual Entry',
+        appId: selectedOpt?.appId || "Manual",
+        applicant: selectedOpt?.applicant || "Manual Entry",
         templateType,
         type: draftType,
-        status: 'draft',
+        status: "draft",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         content: draftContent,
       };
-      setDrafts(p => [newDraft, ...p]);
+      setDrafts((p) => [newDraft, ...p]);
       setSaving(false);
-      alert(draftType === 'tsr' ? '✅ TSR Draft saved successfully!' : '✅ Waiting Report Draft saved successfully!');
+      alert(
+        draftType === "tsr"
+          ? "✅ TSR Draft saved successfully!"
+          : "✅ Waiting Report Draft saved successfully!",
+      );
     }, 800);
   };
 
   const handleSubmit = () => {
-    if (!draftContent.trim()) { alert('Draft content is empty.'); return; }
+    if (!draftContent.trim()) {
+      alert("Draft content is empty.");
+      return;
+    }
     setSubmitting(true);
     setTimeout(() => {
       const newDraft = {
         _id: `draft_${Date.now()}`,
         tsrRefNo: refNo,
-        appId: selectedOpt?.appId || 'Manual',
-        applicant: selectedOpt?.applicant || 'Manual Entry',
+        appId: selectedOpt?.appId || "Manual",
+        applicant: selectedOpt?.applicant || "Manual Entry",
         templateType,
         type: draftType,
-        status: 'submitted',
+        status: "submitted",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         content: draftContent,
       };
-      setDrafts(p => [newDraft, ...p]);
-      setDraftContent('');
-      setSelectedCase('');
+      setDrafts((p) => [newDraft, ...p]);
+      setDraftContent("");
+      setSelectedCase("");
       setSubmitting(false);
-      alert('📤 Submitted for Approval successfully!');
+      alert("📤 Submitted for Approval successfully!");
     }, 1000);
   };
 
   const handleDeleteDraft = (id) => {
-    if (window.confirm('Delete this draft?')) setDrafts(p => p.filter(d => d._id !== id));
+    if (window.confirm("Delete this draft?"))
+      setDrafts((p) => p.filter((d) => d._id !== id));
   };
 
   const handleExportPDF = (contentToExport) => {
     const text = contentToExport || draftContent;
     if (!text.trim()) {
-      alert('No content to export.');
+      alert("No content to export.");
       return;
     }
-    
-    const docTitle = draftType === 'tsr' 
-      ? `TSR Scrutiny Report - ${refNo}` 
-      : `Waiting Scrutiny Report - ${refNo}`;
-    
-    const win = window.open('', '_blank');
+
+    const docTitle =
+      draftType === "tsr"
+        ? `TSR Scrutiny Report - ${refNo}`
+        : `Waiting Scrutiny Report - ${refNo}`;
+
+    const win = window.open("", "_blank");
     win.document.write(`
       <html>
       <head>
@@ -291,63 +328,89 @@ export default function TSRDrafting() {
   };
 
   return (
-    <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div
+      className="animate-in"
+      style={{ display: "flex", flexDirection: "column", gap: 24 }}
+    >
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <div>
-          <h1 style={{ fontFamily: 'Playfair Display', fontSize: 28, color: 'var(--black)', margin: 0, fontWeight: 700 }}>
-            {draftType === 'tsr' ? 'TSR Legal Scrutiny Drafting' : 'Waiting Report Drafting'}
+          <h1
+            style={{
+              fontFamily: "Playfair Display",
+              fontSize: 28,
+              color: "var(--black)",
+              margin: 0,
+              fontWeight: 700,
+            }}
+          >
+            {draftType === "tsr"
+              ? "TSR Legal Scrutiny Drafting"
+              : "Waiting Report Drafting"}
           </h1>
-          <p style={{ color: 'var(--muted)', margin: '6px 0 0', fontSize: 14 }}>
-            {draftType === 'tsr' 
-              ? 'Create, edit, and export high-fidelity Advocate Scrutiny Reports' 
-              : 'Create, edit, and export high-fidelity Advocate Scrutiny Waiting Reports'}
+          <p style={{ color: "var(--muted)", margin: "6px 0 0", fontSize: 14 }}>
+            {draftType === "tsr"
+              ? "Create, edit, and export high-fidelity Advocate Scrutiny Reports"
+              : "Create, edit, and export high-fidelity Advocate Scrutiny Waiting Reports"}
           </p>
         </div>
-        <span style={{ 
-          background: 'linear-gradient(135deg, #09090b, #27272a)', 
-          color: 'white', 
-          padding: '6px 16px', 
-          borderRadius: 20, 
-          fontSize: 12, 
-          fontWeight: 600,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6
-        }}>
+        <span
+          style={{
+            background: "linear-gradient(135deg, #09090b, #27272a)",
+            color: "white",
+            padding: "6px 16px",
+            borderRadius: 20,
+            fontSize: 12,
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
           <Sparkles size={14} />
           AI-Powered
         </span>
       </div>
 
       {/* Segmented Pill Selector (Toggle) */}
-      <div style={{ 
-        background: '#f1f5f9', 
-        padding: '4px', 
-        borderRadius: '12px', 
-        display: 'inline-flex', 
-        alignSelf: 'flex-start',
-        gap: '4px',
-        border: '1px solid #e2e8f0',
-        marginBottom: '4px'
-      }}>
+      <div
+        style={{
+          background: "#f1f5f9",
+          padding: "4px",
+          borderRadius: "12px",
+          display: "inline-flex",
+          alignSelf: "flex-start",
+          gap: "4px",
+          border: "1px solid #e2e8f0",
+          marginBottom: "4px",
+        }}
+      >
         <button
           type="button"
-          onClick={() => handleDraftTypeChange('tsr')}
+          onClick={() => handleDraftTypeChange("tsr")}
           style={{
-            background: draftType === 'tsr' ? 'white' : 'transparent',
-            border: 'none',
-            color: draftType === 'tsr' ? 'var(--black)' : '#64748b',
-            padding: '10px 20px',
-            borderRadius: '8px',
+            background: draftType === "tsr" ? "white" : "transparent",
+            border: "none",
+            color: draftType === "tsr" ? "var(--black)" : "#64748b",
+            padding: "10px 20px",
+            borderRadius: "8px",
             fontSize: 14,
             fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: draftType === 'tsr' ? '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)' : 'none',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8
+            cursor: "pointer",
+            boxShadow:
+              draftType === "tsr"
+                ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)"
+                : "none",
+            transition: "all 0.2s ease",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
           }}
         >
           <FileText size={16} />
@@ -355,21 +418,24 @@ export default function TSRDrafting() {
         </button>
         <button
           type="button"
-          onClick={() => handleDraftTypeChange('waiting')}
+          onClick={() => handleDraftTypeChange("waiting")}
           style={{
-            background: draftType === 'waiting' ? 'white' : 'transparent',
-            border: 'none',
-            color: draftType === 'waiting' ? 'var(--black)' : '#64748b',
-            padding: '10px 20px',
-            borderRadius: '8px',
+            background: draftType === "waiting" ? "white" : "transparent",
+            border: "none",
+            color: draftType === "waiting" ? "var(--black)" : "#64748b",
+            padding: "10px 20px",
+            borderRadius: "8px",
             fontSize: 14,
             fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: draftType === 'waiting' ? '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)' : 'none',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8
+            cursor: "pointer",
+            boxShadow:
+              draftType === "waiting"
+                ? "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)"
+                : "none",
+            transition: "all 0.2s ease",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
           }}
         >
           <Clock size={16} />
@@ -378,37 +444,61 @@ export default function TSRDrafting() {
       </div>
 
       {/* Draft Editor Card */}
-      <div style={{ 
-        background: 'white', 
-        borderRadius: 16, 
-        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.02)', 
-        border: '1px solid #e2e8f0',
-        overflow: 'hidden' 
-      }}>
+      <div
+        style={{
+          background: "white",
+          borderRadius: 16,
+          boxShadow:
+            "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.02)",
+          border: "1px solid #e2e8f0",
+          overflow: "hidden",
+        }}
+      >
         {/* Header */}
-        <div style={{ 
-          background: 'var(--black)', 
-          padding: '18px 28px', 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          color: 'white'
-        }}>
-          <h2 style={{ color: 'white', fontFamily: 'Playfair Display', fontSize: 18, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-            {draftType === 'tsr' ? <FileEdit size={20} /> : <ClipboardList size={20} />}
-            {draftType === 'tsr' ? 'Create New TSR Draft' : 'Create New Waiting Report Draft'}
+        <div
+          style={{
+            background: "var(--black)",
+            padding: "18px 28px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            color: "white",
+          }}
+        >
+          <h2
+            style={{
+              color: "white",
+              fontFamily: "Playfair Display",
+              fontSize: 18,
+              fontWeight: 700,
+              margin: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            {draftType === "tsr" ? (
+              <FileEdit size={20} />
+            ) : (
+              <ClipboardList size={20} />
+            )}
+            {draftType === "tsr"
+              ? "Create New TSR Draft"
+              : "Create New Waiting Report Draft"}
           </h2>
-          <span style={{ 
-            background: 'linear-gradient(135deg, #09090b, #27272a)', 
-            color: 'white', 
-            padding: '4px 12px', 
-            borderRadius: 12, 
-            fontSize: 11, 
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6
-          }}>
+          <span
+            style={{
+              background: "linear-gradient(135deg, #09090b, #27272a)",
+              color: "white",
+              padding: "4px 12px",
+              borderRadius: 12,
+              fontSize: 11,
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
             <Sparkles size={12} />
             AI-Powered
           </span>
@@ -416,18 +506,37 @@ export default function TSRDrafting() {
 
         <div style={{ padding: 28 }}>
           {/* Top Controls */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: 20,
+              marginBottom: 20,
+            }}
+          >
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>
-                {draftType === 'tsr' ? 'Select Case / Initialized TSR' : 'Select Case / Waiting Report'}
+              <label
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#475569",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                  marginBottom: 6,
+                  display: "block",
+                }}
+              >
+                {draftType === "tsr"
+                  ? "Select Case / Initialized TSR"
+                  : "Select Case / Waiting Report"}
               </label>
-              <select 
+              <select
                 className="form-control"
-                value={selectedCase} 
-                onChange={e => setSelectedCase(e.target.value)}
+                value={selectedCase}
+                onChange={(e) => setSelectedCase(e.target.value)}
               >
                 <option value="">-- Select TSR Init --</option>
-                {initiations.map(o => (
+                {initiations.map((o) => (
                   <option key={o._id} value={o._id}>
                     📋 TSR Init: {o.appId} — {o.applicant}
                   </option>
@@ -435,22 +544,50 @@ export default function TSRDrafting() {
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>
-                {draftType === 'tsr' ? 'TSR Reference No.' : 'Waiting Report Reference No.'}
+              <label
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#475569",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                  marginBottom: 6,
+                  display: "block",
+                }}
+              >
+                {draftType === "tsr"
+                  ? "TSR Reference No."
+                  : "Waiting Report Reference No."}
               </label>
-              <input 
+              <input
                 className="form-control"
-                readOnly 
-                value={refNo} 
-                style={{ background: '#f8fafc', color: 'var(--muted)', cursor: 'not-allowed' }} 
+                readOnly
+                value={refNo}
+                style={{
+                  background: "#f8fafc",
+                  color: "var(--muted)",
+                  cursor: "not-allowed",
+                }}
               />
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>Format Type</label>
-              <select 
+              <label
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#475569",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                  marginBottom: 6,
+                  display: "block",
+                }}
+              >
+                Format Type
+              </label>
+              <select
                 className="form-control"
-                value={templateType} 
-                onChange={e => setTemplateType(e.target.value)}
+                value={templateType}
+                onChange={(e) => setTemplateType(e.target.value)}
               >
                 <option>English Format</option>
                 <option>Marathi Format</option>
@@ -460,52 +597,77 @@ export default function TSRDrafting() {
 
           {/* Draft Textarea */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                {draftType === 'tsr' ? 'TSR Draft Content' : 'Waiting Report Draft Content'}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginBottom: 8,
+              }}
+            >
+              <label
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#475569",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                }}
+              >
+                {draftType === "tsr"
+                  ? "TSR Draft Content"
+                  : "Waiting Report Draft Content"}
               </label>
               <span style={{ fontSize: 14 }}>📝</span>
             </div>
-            <textarea 
+            <textarea
               className="form-control draft-editor-textarea"
-              value={draftContent} 
-              onChange={e => setDraftContent(e.target.value)}
-              placeholder={draftType === 'tsr' ? "Click 'Generate Draft' to compile dynamically..." : "Click 'Generate Waiting Report Draft' to compile dynamically..."}
-              rows={12} 
+              value={draftContent}
+              onChange={(e) => setDraftContent(e.target.value)}
+              placeholder={
+                draftType === "tsr"
+                  ? "Click 'Generate Draft' to compile dynamically..."
+                  : "Click 'Generate Waiting Report Draft' to compile dynamically..."
+              }
+              rows={12}
             />
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <button 
-              onClick={handleGenerate} 
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button
+              onClick={handleGenerate}
               disabled={generating}
               className="action-btn btn-primary"
             >
-              <Sparkles size={16} /> 
-              {generating ? 'Generating Dynamic Draft...' : draftType === 'tsr' ? 'Generate Draft' : 'Generate Waiting Report Draft'}
+              <Sparkles size={16} />
+              {generating
+                ? "Generating Dynamic Draft..."
+                : draftType === "tsr"
+                  ? "Generate Draft"
+                  : "Generate Waiting Report Draft"}
             </button>
-            <button 
-              onClick={handleSave} 
+            <button
+              onClick={handleSave}
               disabled={saving}
               className="action-btn btn-outline"
             >
-              <Save size={16} /> 
-              {saving ? 'Saving...' : 'Save as Draft'}
+              <Save size={16} />
+              {saving ? "Saving..." : "Save as Draft"}
             </button>
-            <button 
-              onClick={handleSubmit} 
+            <button
+              onClick={handleSubmit}
               disabled={submitting}
               className="action-btn btn-accent-outline"
             >
-              <Send size={16} /> 
-              {submitting ? 'Submitting...' : 'Submit for Approval'}
+              <Send size={16} />
+              {submitting ? "Submitting..." : "Submit for Approval"}
             </button>
-            <button 
+            <button
               onClick={() => handleExportPDF(draftContent)}
               className="action-btn btn-outline"
             >
-              <Download size={16} /> 
+              <Download size={16} />
               Export Advocate PDF
             </button>
           </div>
@@ -513,99 +675,182 @@ export default function TSRDrafting() {
       </div>
 
       {/* All TSR Drafts Table */}
-      <div style={{ 
-        background: 'white', 
-        borderRadius: 16, 
-        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.02)', 
-        border: '1px solid #e2e8f0',
-        overflow: 'hidden' 
-      }}>
-        <div style={{ 
-          padding: '20px 28px', 
-          borderBottom: '1px solid #e2e8f0', 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center' 
-        }}>
-          <h2 style={{ fontFamily: 'Playfair Display', fontSize: 18, fontWeight: 700, color: 'var(--black)', margin: 0 }}>
-            {draftType === 'tsr' ? 'All TSR Drafts' : 'All Waiting Report Drafts'}
+      <div
+        style={{
+          background: "white",
+          borderRadius: 16,
+          boxShadow:
+            "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.02)",
+          border: "1px solid #e2e8f0",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            padding: "20px 28px",
+            borderBottom: "1px solid #e2e8f0",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "Playfair Display",
+              fontSize: 18,
+              fontWeight: 700,
+              color: "var(--black)",
+              margin: 0,
+            }}
+          >
+            {draftType === "tsr"
+              ? "All TSR Drafts"
+              : "All Waiting Report Drafts"}
           </h2>
-          <span style={{ background: '#f1f5f9', color: '#64748b', padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600 }}>
-            {drafts.filter(d => (d.type || 'tsr') === draftType).length} drafts
+          <span
+            style={{
+              background: "#f1f5f9",
+              color: "#64748b",
+              padding: "4px 12px",
+              borderRadius: 12,
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            {drafts.filter((d) => (d.type || "tsr") === draftType).length}{" "}
+            drafts
           </span>
         </div>
-        
-        {drafts.filter(d => (d.type || 'tsr') === draftType).length === 0 ? (
-          <div style={{ padding: 48, textAlign: 'center' }}>
+
+        {drafts.filter((d) => (d.type || "tsr") === draftType).length === 0 ? (
+          <div style={{ padding: 48, textAlign: "center" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>✍️</div>
-            <div style={{ fontFamily: 'Playfair Display', fontSize: 18, color: 'var(--black)', fontWeight: 600 }}>
-              {draftType === 'tsr' ? 'No TSR drafts yet' : 'No waiting report drafts yet'}
+            <div
+              style={{
+                fontFamily: "Playfair Display",
+                fontSize: 18,
+                color: "var(--black)",
+                fontWeight: 600,
+              }}
+            >
+              {draftType === "tsr"
+                ? "No TSR drafts yet"
+                : "No waiting report drafts yet"}
             </div>
-            <div style={{ color: 'var(--muted)', marginTop: 8, fontSize: 14 }}>
-              {draftType === 'tsr' ? 'Create your first TSR draft above.' : 'Create your first waiting report draft above.'}
+            <div style={{ color: "var(--muted)", marginTop: 8, fontSize: 14 }}>
+              {draftType === "tsr"
+                ? "Create your first TSR draft above."
+                : "Create your first waiting report draft above."}
             </div>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="drafts-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <div style={{ overflowX: "auto" }}>
+            <table
+              className="drafts-table"
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 13,
+              }}
+            >
               <thead>
-                <tr style={{ background: '#f8fafc' }}>
-                  {['ID', 'App No.', 'Applicant', 'Status', 'Created', 'Updated', 'Actions'].map(h => (
+                <tr style={{ background: "#f8fafc" }}>
+                  {[
+                    "ID",
+                    "App No.",
+                    "Applicant",
+                    "Status",
+                    "Created",
+                    "Updated",
+                    "Actions",
+                  ].map((h) => (
                     <th key={h}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {drafts.filter(d => (d.type || 'tsr') === draftType).map((d, i) => (
-                  <tr key={d._id} className="table-row" style={{ animation: `fadeSlideUp 0.3s ease forwards`, animationDelay: `${i * 0.04}s`, opacity: 0 }}>
-                    <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--black)' }}>{d.tsrRefNo}</td>
-                    <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{d.appId}</td>
-                    <td style={{ fontWeight: 600, color: '#334155' }}>{d.applicant}</td>
-                    <td><StatusBadge status={d.status} /></td>
-                    <td style={{ color: '#64748b', fontSize: 12 }}>{new Date(d.createdAt).toLocaleDateString('en-IN')}</td>
-                    <td style={{ color: '#64748b', fontSize: 12 }}>{new Date(d.updatedAt).toLocaleDateString('en-IN')}</td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button 
-                          onClick={() => { setDraftContent(d.content); setSelectedCase(''); }} 
-                          className="icon-action-btn edit" 
-                          title="Edit"
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button 
-                          onClick={() => alert("Previewing: " + d.tsrRefNo)} 
-                          className="icon-action-btn view" 
-                          title="Preview"
-                        >
-                          <Eye size={13} />
-                        </button>
-                        <button 
-                          onClick={() => handleExportPDF(d.content)} 
-                          className="icon-action-btn pdf" 
-                          title="Export PDF"
-                        >
-                          <Download size={13} />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteDraft(d._id)} 
-                          className="icon-action-btn delete" 
-                          title="Delete"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {drafts
+                  .filter((d) => (d.type || "tsr") === draftType)
+                  .map((d, i) => (
+                    <tr
+                      key={d._id}
+                      className="table-row"
+                      style={{
+                        animation: `fadeSlideUp 0.3s ease forwards`,
+                        animationDelay: `${i * 0.04}s`,
+                        opacity: 0,
+                      }}
+                    >
+                      <td
+                        style={{
+                          fontFamily: "monospace",
+                          fontWeight: 700,
+                          color: "var(--black)",
+                        }}
+                      >
+                        {d.tsrRefNo}
+                      </td>
+                      <td style={{ fontFamily: "monospace", fontSize: 12 }}>
+                        {d.appId}
+                      </td>
+                      <td style={{ fontWeight: 600, color: "#334155" }}>
+                        {d.applicant}
+                      </td>
+                      <td>
+                        <StatusBadge status={d.status} />
+                      </td>
+                      <td style={{ color: "#64748b", fontSize: 12 }}>
+                        {new Date(d.createdAt).toLocaleDateString("en-IN")}
+                      </td>
+                      <td style={{ color: "#64748b", fontSize: 12 }}>
+                        {new Date(d.updatedAt).toLocaleDateString("en-IN")}
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button
+                            onClick={() => {
+                              setDraftContent(d.content);
+                              setSelectedCase("");
+                            }}
+                            className="icon-action-btn edit"
+                            title="Edit"
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                          <button
+                            onClick={() => alert("Previewing: " + d.tsrRefNo)}
+                            className="icon-action-btn view"
+                            title="Preview"
+                          >
+                            <Eye size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleExportPDF(d.content)}
+                            className="icon-action-btn pdf"
+                            title="Export PDF"
+                          >
+                            <Download size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDraft(d._id)}
+                            className="icon-action-btn delete"
+                            title="Delete"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
         )}
       </div>
 
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
           .form-control {
             border: 1px solid #cbd5e1;
             padding: 10px 14px;
@@ -748,8 +993,9 @@ export default function TSRDrafting() {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
           }
-        `
-      }} />
+        `,
+        }}
+      />
     </div>
   );
 }
