@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { DEMO_MODE, MOCK_DASHBOARD } from '../data/mockData';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, CartesianGrid } from 'recharts';
-import { Briefcase, Clock, CheckCircle, Landmark, TrendingUp } from 'lucide-react';
+import { Briefcase, Clock, CheckCircle, Landmark, TrendingUp, Database} from 'lucide-react';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
@@ -58,6 +58,14 @@ export default function Dashboard() {
           {role === 'admin' && (
             <button onClick={() => navigate('/cases/new')} style={{ background: 'var(--navy)', color: 'white', padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 600 }}>
               ➕ New Case
+            </button>
+          )}
+          {role === 'admin' && (
+            <button onClick={() => navigate('/masterDb')} style={{ background: 'var(--navy)', color: 'white', padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+              <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                <Database/>
+                Master Database
+              </div>
             </button>
           )}
           {role === 'senior' && (

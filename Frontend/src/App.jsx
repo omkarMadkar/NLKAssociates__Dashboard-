@@ -13,6 +13,8 @@ import Login from './pages/Login';
 import TSRInitiation from './pages/NonLitigation/BusinessLegal/TSRInitiation';
 import TSRDrafting from './pages/NonLitigation/BusinessLegal/TSRDrafting';
 
+import MasterDB from './pages/MasterDB';
+
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -38,6 +40,8 @@ function App() {
           <Route path="/approvals" element={<Approvals />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/reports" element={<Reports />} />
+
+          <Route path="/masterDB" element={<MasterDB />} />
           {/* Business Legal Routes */}
           <Route path="/non-litigation/business-legal/tsr-initiation" element={<TSRInitiation />} />
           <Route path="/non-litigation/business-legal/tsr-drafting" element={<TSRDrafting />} />

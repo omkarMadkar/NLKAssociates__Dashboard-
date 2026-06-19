@@ -20,6 +20,8 @@ const approvalRoutes = require('./routes/approvalRoutes');
 const tsrDocumentListRoutes = require("./routes/tsrDocumentList");
 const tsrTitleEvidenceRoutes = require("./routes/tsrTitleEvidenceRoutes");
 
+const masterDBRoutes = require("./routes/masterDBRoutes");
+
 const tsrDraftRoutes = require("./routes/tsrDraftRoutes");
 const path = require('path');
 const fs = require('fs');
@@ -63,6 +65,7 @@ app.use("/api/tsr-document-list", tsrDocumentListRoutes);
 app.use("/api/tsr-title-evidence",tsrTitleEvidenceRoutes);
 
 app.use("/api/tsr-draft", tsrDraftRoutes);
+app.use("/api/masterdb", masterDBRoutes);
 
 
 // ERROR HANDLER
