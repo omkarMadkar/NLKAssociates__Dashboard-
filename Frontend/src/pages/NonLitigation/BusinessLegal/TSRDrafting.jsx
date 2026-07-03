@@ -263,6 +263,9 @@ export default function TSRDrafting() {
             font-size: 13px; 
             text-align: justify;
             line-height: 1.6;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: anywhere;
           }
           
           .letterhead-footer-stamp {
