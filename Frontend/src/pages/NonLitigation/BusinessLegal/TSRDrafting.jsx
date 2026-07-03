@@ -217,6 +217,17 @@ export default function TSRDrafting() {
       return;
     }
 
+    // Escape basic HTML characters to avoid parsing errors
+    let formattedText = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+    // Replace contiguous underscores, box-drawing characters, dashes, etc. with responsive HR lines
+    formattedText = formattedText.replace(/[━_─-]{10,}/g, '<hr class="section-divider" />');
+
     const docTitle =
       draftType === "tsr"
         ? `TSR Scrutiny Report - ${refNo}`
@@ -263,9 +274,14 @@ export default function TSRDrafting() {
             font-size: 13px; 
             text-align: justify;
             line-height: 1.6;
-            word-wrap: break-word;
-            word-break: break-word;
-            overflow-wrap: anywhere;
+          }
+
+          .section-divider {
+            border: none;
+            border-top: 1.5px solid #334155;
+            margin: 14px 0;
+            width: 100%;
+            display: block;
           }
           
           .letterhead-footer-stamp {
@@ -320,7 +336,7 @@ export default function TSRDrafting() {
             <img src="${HEADER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Header" />
           </div>
 
-          <div class="content">${text}</div>
+          <div class="content">${formattedText}</div>
 
           <div class="letterhead-footer-stamp">
             <img src="${FOOTER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Footer" />
