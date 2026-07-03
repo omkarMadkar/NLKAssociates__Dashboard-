@@ -215,3 +215,55 @@ exports.getByTSR = async (req, res) => {
     });
   }
 };
+
+exports.downloadTitleFlowTemplate = async (req, res) => {
+  try {
+    const headers = [
+      "Event_No",
+      "Event_Type",
+      "From_Party",
+      "To_Party",
+      "Current_Owner",
+      "Document_Type",
+      "Document_Date",
+      "Registration_No",
+      "SRO_Name",
+      "Property_Details",
+      "Area_Transferred",
+      "Remarks",
+      "Generate_Paragraph"
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers]);
+
+    // Set column widths to prevent truncation
+    worksheet["!cols"] = [
+      { wch: 10 }, // Event_No
+      { wch: 18 }, // Event_Type
+      { wch: 20 }, // From_Party
+      { wch: 20 }, // To_Party
+      { wch: 15 }, // Current_Owner
+      { wch: 20 }, // Document_Type
+      { wch: 18 }, // Document_Date
+      { wch: 18 }, // Registration_No
+      { wch: 18 }, // SRO_Name
+      { wch: 30 }, // Property_Details
+      { wch: 20 }, // Area_Transferred
+      { wch: 20 }, // Remarks
+      { wch: 20 }  // Generate_Paragraph
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "TitleFlowTemplate");
+
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+    res.setHeader("Content-Disposition", "attachment; filename=TITLE_FLOW_Template.xlsx");
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.send(buffer);
+  } catch (error) {
+    console.error("Title Flow template download error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

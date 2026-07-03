@@ -473,6 +473,25 @@ export default function TSRInitiation() {
     }
   };
 
+  const handleDownloadTitleFlowTemplate = async () => {
+    try {
+      const response = await API.get("/tsr-title-flow/template", {
+        headers: authHeader(),
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "TITLE_FLOW_Template.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error("Failed to download title flow template:", error);
+      alert("Failed to download Title Flow template");
+    }
+  };
+
   // ---------- BASIC FORM HANDLERS ----------
   const validate = () => {
     const e = {};
@@ -758,6 +777,7 @@ export default function TSRInitiation() {
               handleFileDrop={handleFileDrop}
               handleTitleFlowExcel={handleTitleFlowExcel}
               titleFlowData={titleFlowData}
+              handleDownloadTitleFlowTemplate={handleDownloadTitleFlowTemplate}
             />
           )}
 

@@ -7,6 +7,7 @@ const {
   getByTSR,
   parseTitleFlowExcel,
   uploadAndSaveTitleFlow,
+  downloadTitleFlowTemplate,
 } = require("../controllers/tsrTitleFlowController");
 
 const { protect } = require("../middleware/authMiddleware");
@@ -15,6 +16,7 @@ const upload = require("../middleware/upload");
 
 router.post("/create", protect, createTitleFlow);
 
+router.get("/template", protect, downloadTitleFlowTemplate);
 router.get("/:tsrId", protect, getByTSR);
 
 router.post(

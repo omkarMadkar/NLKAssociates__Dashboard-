@@ -18,6 +18,7 @@ export default function TSRDocumentsUpload({
   handleFileDrop,
   handleTitleFlowExcel,
   titleFlowData,
+  handleDownloadTitleFlowTemplate,
 }) {
   return (
     <div className="animate-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -81,7 +82,7 @@ export default function TSRDocumentsUpload({
               and extract details. Or upload the Title Flow Excel below.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
-              <div>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
                 <input
                   type="file"
                   id="fileInp"
@@ -104,6 +105,26 @@ export default function TSRDocumentsUpload({
                 >
                   Browse Title Flow Excel
                 </label>
+
+                <button
+                  onClick={handleDownloadTitleFlowTemplate}
+                  type="button"
+                  style={{
+                    background: "none",
+                    border: "1px solid var(--black)",
+                    color: "var(--black)",
+                    padding: "10px 24px",
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  Download Template
+                </button>
               </div>
 
               {titleFlowData && (

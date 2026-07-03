@@ -6,6 +6,7 @@ const upload = require("../middleware/upload");
 const {
   uploadMasterExcel,
   getMasterDB,
+  downloadTemplate,
 } = require("../controllers/masterDBController");
 
 router.post(
@@ -14,6 +15,7 @@ router.post(
   uploadMasterExcel
 );
 
+router.get("/template", downloadTemplate);
 router.get("/", getMasterDB);
 
 module.exports = router;

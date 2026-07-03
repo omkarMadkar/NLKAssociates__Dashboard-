@@ -85,6 +85,24 @@ export default function MasterDB() {
     fetchRecords(1, search);
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await API.get("/masterdb/template", {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "MasterDB_Template.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error("Failed to download template:", error);
+      alert("Failed to download template");
+    }
+  };
+
   return (
     <div
       style={{
@@ -224,6 +242,25 @@ export default function MasterDB() {
             }}
           >
             Search
+          </button>
+
+          <button
+            onClick={handleDownloadTemplate}
+            style={{
+              background: "#fff",
+              border: "1px solid var(--navy)",
+              color: "var(--navy)",
+              padding: "12px 18px",
+              borderRadius: "10px",
+              cursor: "pointer",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <FileSpreadsheet size={18} />
+            Download Template
           </button>
 
           <label

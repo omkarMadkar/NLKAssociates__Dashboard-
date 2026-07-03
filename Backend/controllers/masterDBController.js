@@ -22,11 +22,11 @@ exports.uploadMasterExcel = async (req, res) => {
       branch: row["Branch"] || "",
 
       applicant: row["Applicant"]
-        ? row["Applicant"].split(",").map((item) => item.trim())
+        ? String(row["Applicant"]).split(",").map((item) => item.trim())
         : [],
 
       coApplicant: row["Co-Applicants"]
-        ? row["Co-Applicants"].split(",").map((item) => item.trim())
+        ? String(row["Co-Applicants"]).split(",").map((item) => item.trim())
         : [],
 
       transactionType: row["Transaction Type"] || "",
@@ -95,3 +95,47 @@ exports.getMasterDB = async (req, res) => {
     });
   }
 };
+
+exports.downloadTemplate = async (req, res) => {
+  try {
+    const headers = [
+      "Author",
+      "Application No",
+      "Branch",
+      "Applicant",
+      "Co-Applicants",
+      "Transaction Type",
+      "Property Details",
+      "Vet + CTC",
+      "CTC"
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers]);
+
+    // Set column widths to prevent truncation
+    worksheet["!cols"] = [
+      { wch: 15 }, // Author
+      { wch: 20 }, // Application No
+      { wch: 15 }, // Branch
+      { wch: 25 }, // Applicant
+      { wch: 25 }, // Co-Applicants
+      { wch: 20 }, // Transaction Type
+      { wch: 40 }, // Property Details
+      { wch: 15 }, // Vet + CTC
+      { wch: 10 }  // CTC
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+    res.setHeader("Content-Disposition", "attachment; filename=MasterDB_Template.xlsx");
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.send(buffer);
+  } catch (error) {
+    console.error("Template download error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
