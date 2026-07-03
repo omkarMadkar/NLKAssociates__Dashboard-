@@ -356,23 +356,9 @@ export default function TSRDrafting() {
             display: none;
           }
 
-          .print-table {
-            width: 100%;
-            border-collapse: collapse;
-          }
-          
-          .print-table td {
-            padding: 0;
-            border: none;
-          }
-
-          .print-table thead, .print-table tfoot {
-            display: none;
-          }
-
           @page {
             size: A4;
-            margin: 0;
+            margin: 15mm 25.4mm 32mm 25.4mm;
           }
 
           @media print {
@@ -388,31 +374,13 @@ export default function TSRDrafting() {
               border: none;
             }
 
-            .print-table thead {
-              display: table-header-group;
-            }
-
-            .print-table tfoot {
-              display: table-footer-group;
-            }
-
-            .header-spacer {
-              height: 48mm;
-            }
-
-            .footer-spacer {
-              height: 40mm;
-            }
-
             .letterhead-header {
-              position: fixed;
-              top: 15mm;
-              left: 25.4mm;
-              right: 25.4mm;
-              width: calc(100% - 50.8mm);
+              position: relative;
+              top: 0;
+              left: 0;
+              width: 100%;
               text-align: center;
-              z-index: 9999;
-              margin: 0;
+              margin-bottom: 25px;
             }
 
             .letterhead-header img {
@@ -423,7 +391,7 @@ export default function TSRDrafting() {
             }
 
             .content { 
-              margin: 0 25.4mm;
+              margin: 0;
             }
 
             .no-print { 
@@ -433,7 +401,7 @@ export default function TSRDrafting() {
             .letterhead-footer-stamp {
               display: block !important;
               position: fixed;
-              bottom: 12mm;
+              bottom: 8mm;
               left: 25.4mm;
               right: 25.4mm;
               width: calc(100% - 50.8mm);
@@ -457,29 +425,7 @@ export default function TSRDrafting() {
             <img src="${HEADER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Header" />
           </div>
 
-          <table class="print-table">
-            <thead>
-              <tr>
-                <td>
-                  <div class="header-spacer"></div>
-                </td>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <div class="content">${formattedText}</div>
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr>
-                <td>
-                  <div class="footer-spacer"></div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="content">${formattedText}</div>
 
           <div class="letterhead-footer-stamp">
             <img src="${FOOTER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Footer" />
