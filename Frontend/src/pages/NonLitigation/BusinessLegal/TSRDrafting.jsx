@@ -296,18 +296,21 @@ export default function TSRDrafting() {
 
     // Replace default text signature block with dynamically compiled digital signature block at the bottom
     if (applyDigitalSignature) {
-      const signatureMarkerRegex = /(NARAYAN L\. KHAMKAR|नारायण एल\. खामकर)\s*\n\s*(ADVOCATE & NOTARY|ADVOCATE)/gi;
-      const dateStr = new Date().toLocaleDateString("en-IN");
-      const formattedDate = dateStr.split("/").join("."); // e.g. 30.04.2026
+      const signatureMarkerRegex = /(NARAYAN L\. KHAMKAR|नारायण एल\. खामकर)(?:\s+ADVOCATE)?(?:\s+(?:&|and)?\s*NOTARY)?/gi;
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, "0");
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const yyyy = now.getFullYear();
+      const formattedDate = `${dd}.${mm}.${yyyy}`;
 
       const signatureBlockHtml = `
-        <div class="signature-section" style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; page-break-inside: avoid; break-inside: avoid; border: none; padding: 0;">
+        <div class="signature-section" style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 35px; page-break-inside: avoid; break-inside: avoid; border: none; padding: 0;">
           <!-- Left Side: Thanking you, Place, Date -->
-          <div style="font-size: 13.5px; line-height: 1.8; font-weight: bold; font-family: 'Times New Roman', serif; text-align: left;">
-            Thanking you,<br><br>
-            <table style="border: none; border-collapse: collapse; font-family: 'Times New Roman', serif; font-size: 13.5px; font-weight: bold; width: auto; margin: 0;">
-              <tr style="border: none;"><td style="border: none; padding: 2px 0; width: 60px; text-align: left;">Place</td><td style="border: none; padding: 2px 0; text-align: left;">: Pune.</td></tr>
-              <tr style="border: none;"><td style="border: none; padding: 2px 0; width: 60px; text-align: left;">Date</td><td style="border: none; padding: 2px 0; text-align: left;">: ${formattedDate}.</td></tr>
+          <div style="font-size: 13.5px; line-height: 1.6; font-weight: bold; font-family: 'Times New Roman', serif; text-align: left;">
+            Thanking you,<br>
+            <table style="border: none; border-collapse: collapse; font-family: 'Times New Roman', serif; font-size: 13.5px; font-weight: bold; width: auto; margin: 8px 0 0 0; padding: 0;">
+              <tr style="border: none;"><td style="border: none; padding: 1px 0; width: 60px; text-align: left;">Place</td><td style="border: none; padding: 1px 0; text-align: left;">: Pune.</td></tr>
+              <tr style="border: none;"><td style="border: none; padding: 1px 0; width: 60px; text-align: left;">Date</td><td style="border: none; padding: 1px 0; text-align: left;">: ${formattedDate}.</td></tr>
             </table>
           </div>
 
