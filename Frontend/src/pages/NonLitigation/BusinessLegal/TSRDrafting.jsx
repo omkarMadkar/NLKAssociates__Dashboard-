@@ -19,7 +19,7 @@ import {
   generateEnglishWaitingReport,
   generateMarathiWaitingReport,
 } from "../../../utils/tsrTemplateEngine";
-import { HEADER_IMAGE_B64, FOOTER_IMAGE_B64 } from "../../../utils/letterheadImages";
+import { HEADER_IMAGE_B64, FOOTER_IMAGE_B64, STAMP_IMAGE_B64, SIG_IMAGE_B64 } from "../../../utils/letterheadImages";
 
 const STATUS_STYLES = {
   draft: { bg: "#f1f5f9", color: "#475569", label: "Draft" },
@@ -55,6 +55,7 @@ export default function TSRDrafting() {
   const [templateType, setTemplateType] = useState("English Format");
   const [draftContent, setDraftContent] = useState("");
   const [draftData, setDraftData] = useState(null);
+  const [applyDigitalSignature, setApplyDigitalSignature] = useState(true);
 
   // Persist drafts to localStorage to preserve across page reloads
   const [drafts, setDrafts] = useState(() => {
@@ -292,6 +293,40 @@ export default function TSRDrafting() {
     formattedText = formattedText.replace(dividerHeadingRegex, (match, headingText) => {
       return `<div class="keep-together" style="page-break-inside: avoid; break-inside: avoid; margin: 0;"><hr class="section-divider" />\n${headingText}</div>`;
     });
+
+    // Replace default text signature block with dynamically compiled digital signature block at the bottom
+    if (applyDigitalSignature) {
+      const signatureMarkerRegex = /(NARAYAN L\. KHAMKAR|नारायण एल\. खामकर)\s*\n\s*(ADVOCATE & NOTARY|ADVOCATE)/gi;
+      const dateStr = new Date().toLocaleDateString("en-IN");
+      const formattedDate = dateStr.split("/").join("."); // e.g. 30.04.2026
+
+      const signatureBlockHtml = `
+        <div class="signature-section" style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; page-break-inside: avoid; break-inside: avoid; border: none; padding: 0;">
+          <!-- Left Side: Thanking you, Place, Date -->
+          <div style="font-size: 13.5px; line-height: 1.8; font-weight: bold; font-family: 'Times New Roman', serif; text-align: left;">
+            Thanking you,<br><br>
+            <table style="border: none; border-collapse: collapse; font-family: 'Times New Roman', serif; font-size: 13.5px; font-weight: bold; width: auto; margin: 0;">
+              <tr style="border: none;"><td style="border: none; padding: 2px 0; width: 60px; text-align: left;">Place</td><td style="border: none; padding: 2px 0; text-align: left;">: Pune.</td></tr>
+              <tr style="border: none;"><td style="border: none; padding: 2px 0; width: 60px; text-align: left;">Date</td><td style="border: none; padding: 2px 0; text-align: left;">: ${formattedDate}.</td></tr>
+            </table>
+          </div>
+
+          <!-- Right Side: Stamp & Digital Signature Card -->
+          <div style="display: flex; align-items: center; gap: 15px; margin-bottom: -5px; border: none; padding: 0;">
+            <!-- Stamp -->
+            <div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; border: none;">
+              <img src="${STAMP_IMAGE_B64}" style="max-width: 100%; max-height: 100%; object-fit: contain; border: none; display: block;" />
+            </div>
+
+            <!-- Digital Signature Card -->
+            <div style="width: 190px; height: auto; border: none;">
+              <img src="${SIG_IMAGE_B64}" style="width: 100%; height: auto; display: block; border: none;" />
+            </div>
+          </div>
+        </div>
+      `;
+      formattedText = formattedText.replace(signatureMarkerRegex, signatureBlockHtml);
+    }
 
     const docTitle =
       draftType === "tsr"
@@ -707,6 +742,34 @@ export default function TSRDrafting() {
                 <option>Marathi Format</option>
               </select>
             </div>
+          </div>
+
+          {/* Digital Signature & Stamp Toggle Control */}
+          <div 
+            style={{ 
+              marginBottom: 20, 
+              display: "flex", 
+              alignItems: "center",
+              background: "#f8fafc",
+              padding: "12px 20px",
+              borderRadius: 8,
+              border: "1px solid #e2e8f0"
+            }}
+          >
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", color: "var(--black)" }}>
+              <input
+                type="checkbox"
+                checked={applyDigitalSignature}
+                onChange={(e) => setApplyDigitalSignature(e.target.checked)}
+                style={{
+                  width: 18,
+                  height: 18,
+                  cursor: "pointer",
+                  accentColor: "var(--black)"
+                }}
+              />
+              🖋️ Enable Advocate Digital Signature & Stamp on PDF Export
+            </label>
           </div>
 
           {/* Draft Textarea */}
