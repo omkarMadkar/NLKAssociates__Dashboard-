@@ -394,9 +394,23 @@ export default function TSRDrafting() {
             display: none;
           }
 
+          .print-table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          
+          .print-table td {
+            padding: 0;
+            border: none;
+          }
+
+          .print-table thead, .print-table tfoot {
+            display: none;
+          }
+
           @page {
             size: A4;
-            margin: 15mm 25.4mm 32mm 25.4mm;
+            margin: 0;
           }
 
           @media print {
@@ -412,13 +426,27 @@ export default function TSRDrafting() {
               border: none;
             }
 
+            .print-table thead {
+              display: table-header-group;
+            }
+
+            .print-table tfoot {
+              display: table-footer-group;
+            }
+
+            .header-spacer {
+              height: 20mm;
+            }
+
+            .footer-spacer {
+              height: 35mm;
+            }
+
             .letterhead-header {
               position: relative;
-              top: 0;
-              left: 0;
-              width: 100%;
+              margin: 15mm 25.4mm 10mm 25.4mm;
+              width: calc(100% - 50.8mm);
               text-align: center;
-              margin-bottom: 25px;
             }
 
             .letterhead-header img {
@@ -429,7 +457,7 @@ export default function TSRDrafting() {
             }
 
             .content { 
-              margin: 0;
+              margin: 0 25.4mm;
             }
 
             .no-print { 
@@ -439,7 +467,7 @@ export default function TSRDrafting() {
             .letterhead-footer-stamp {
               display: block !important;
               position: fixed;
-              bottom: 8mm;
+              bottom: 12mm;
               left: 25.4mm;
               right: 25.4mm;
               width: calc(100% - 50.8mm);
@@ -463,7 +491,29 @@ export default function TSRDrafting() {
             <img src="${HEADER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Header" />
           </div>
 
-          <div class="content">${formattedText}</div>
+          <table class="print-table">
+            <thead>
+              <tr>
+                <td>
+                  <div class="header-spacer"></div>
+                </td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="content">${formattedText}</div>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>
+                  <div class="footer-spacer"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
           <div class="letterhead-footer-stamp">
             <img src="${FOOTER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Footer" />
