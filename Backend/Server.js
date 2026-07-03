@@ -23,6 +23,7 @@ const tsrTitleEvidenceRoutes = require("./routes/tsrTitleEvidenceRoutes");
 const masterDBRoutes = require("./routes/masterDBRoutes");
 
 const tsrDraftRoutes = require("./routes/tsrDraftRoutes");
+const pdfSigningRoutes = require("./routes/pdfSigningRoutes");
 const path = require('path');
 const fs = require('fs');
 
@@ -66,6 +67,7 @@ app.use("/api/tsr-title-evidence",tsrTitleEvidenceRoutes);
 
 app.use("/api/tsr-draft", tsrDraftRoutes);
 app.use("/api/masterdb", masterDBRoutes);
+app.use("/api/pdf-signing", pdfSigningRoutes);
 
 
 // ERROR HANDLER

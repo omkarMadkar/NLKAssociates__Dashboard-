@@ -56,6 +56,11 @@ export default function TSRDrafting() {
   const [draftContent, setDraftContent] = useState("");
   const [draftData, setDraftData] = useState(null);
   const [applyDigitalSignature, setApplyDigitalSignature] = useState(true);
+  const [showSigningModal, setShowSigningModal] = useState(false);
+  const [pfxFile, setPfxFile] = useState(null);
+  const [pfxPassword, setPfxPassword] = useState("");
+  const [signingPdf, setSigningPdf] = useState(false);
+  const [compiledHtmlForSigning, setCompiledHtmlForSigning] = useState("");
 
   // Persist drafts to localStorage to preserve across page reloads
   const [drafts, setDrafts] = useState(() => {
@@ -336,8 +341,7 @@ export default function TSRDrafting() {
         ? `TSR Scrutiny Report - ${refNo}`
         : `Waiting Scrutiny Report - ${refNo}`;
 
-    const win = window.open("", "_blank");
-    win.document.write(`
+    const compiledHtml = `
       <html>
       <head>
         <title>${docTitle}</title>
@@ -525,9 +529,80 @@ export default function TSRDrafting() {
         </div>
       </body>
       </html>
-    `);
-    win.document.close();
+    \`;
+
+    if (applyDigitalSignature) {
+      setCompiledHtmlForSigning(compiledHtml);
+      setShowSigningModal(true);
+    } else {
+      const win = window.open("", "_blank");
+      win.document.write(compiledHtml);
+      win.document.close();
+    }
   };
+
+  const handleSignAndDownload = async () => {
+    if (!pfxFile) {
+      alert("Please upload your PFX/P12 certificate file.");
+      return;
+    }
+    if (!pfxPassword) {
+      alert("Please enter your certificate password.");
+      return;
+    }
+
+    setSigningPdf(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const pfxBase64 = e.target.result.split(",")[1] || e.target.result;
+          const { data } = await API.post(
+            "/pdf-signing/sign-pdf",
+            {
+              html: compiledHtmlForSigning,
+              pfxBase64,
+              password: pfxPassword,
+            },
+            {
+              headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            }
+          );
+
+          if (data.success && data.pdfBase64) {
+            const byteCharacters = atob(data.pdfBase64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: "application/pdf" });
+            const link = document.createElement("a");
+            link.href = window.URL.createObjectURL(blob);
+            link.download = \`\${refNo.replace(/\\//g, "_")}_Signed_Report.pdf\`;
+            link.click();
+            
+            setShowSigningModal(false);
+            setPfxPassword("");
+            setPfxFile(null);
+          } else {
+            alert(data.message || "Failed to sign PDF.");
+          }
+        } catch (err) {
+          console.error(err);
+          alert(err.response?.data?.message || "Error occurred during cryptographic signing.");
+        } finally {
+          setSigningPdf(false);
+        }
+      };
+      reader.readAsDataURL(pfxFile);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to read certificate file.");
+      setSigningPdf(false);
+    }
+  };
+
 
   return (
     <div
@@ -1226,6 +1301,120 @@ export default function TSRDrafting() {
         `,
         }}
       />
+
+      {/* Cryptographic Signing Modal */}
+      {showSigningModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 99999,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: 16,
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              width: "100%",
+              maxWidth: 480,
+              overflow: "hidden",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ background: "var(--black)", color: "white", padding: "18px 24px" }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
+                🖋️ Cryptographic PDF Signing
+              </h3>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
+                  Select Certificate File (.pfx / .p12)
+                </label>
+                <input
+                  type="file"
+                  accept=".pfx,.p12"
+                  onChange={(e) => setPfxFile(e.target.files[0])}
+                  className="form-control"
+                  style={{ padding: 8 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", textTransform: "uppercase", display: "block", marginBottom: 6 }}>
+                  Certificate Password / Passphrase
+                </label>
+                <input
+                  type="password"
+                  value={pfxPassword}
+                  onChange={(e) => setPfxPassword(e.target.value)}
+                  placeholder="Enter certificate password..."
+                  className="form-control"
+                />
+              </div>
+
+              <div style={{ background: "#f8fafc", padding: 12, borderRadius: 8, fontSize: 11, color: "#64748b", border: "1px solid #cbd5e1", lineHeight: 1.4 }}>
+                <strong>Test Credentials:</strong> You can upload the auto-generated test certificate at <code>Backend/assets/test_cert.pfx</code> or check the scratch directory, using password <code>password123</code>.
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ background: "#f8fafc", padding: "16px 24px", display: "flex", justifyContent: "flex-end", gap: 12, borderTop: "1px solid #e2e8f0" }}>
+              <button
+                onClick={() => {
+                  setShowSigningModal(false);
+                  setPfxPassword("");
+                  setPfxFile(null);
+                }}
+                disabled={signingPdf}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  background: "white",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSignAndDownload}
+                disabled={signingPdf}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "var(--black)",
+                  color: "white",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {signingPdf ? "Signing..." : "Sign and Download"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
