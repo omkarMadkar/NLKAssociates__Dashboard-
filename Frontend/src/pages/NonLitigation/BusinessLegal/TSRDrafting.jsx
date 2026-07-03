@@ -231,13 +231,23 @@ export default function TSRDrafting() {
           @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Montserrat:wght@400;500;700&display=swap');
           
           body { 
+            margin: 0;
+            padding: 0;
+            background: #f1f5f9;
             font-family: 'Times New Roman', serif; 
-            padding: 40px; 
-            line-height: 1.5; 
-            color: #000; 
-            background: #fff;
+            color: #000;
           }
           
+          .page-container {
+            background: #fff;
+            width: 210mm;
+            margin: 30px auto;
+            padding: 20mm;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            position: relative;
+          }
+
           .letterhead-header {
             margin-bottom: 24px;
             width: 100%;
@@ -252,16 +262,34 @@ export default function TSRDrafting() {
             white-space: pre-wrap; 
             font-size: 13px; 
             text-align: justify;
+            line-height: 1.6;
           }
           
           .letterhead-footer-stamp {
             display: none;
           }
 
+          @page {
+            size: A4;
+            margin: 0;
+          }
+
           @media print {
             body { 
-              padding: 0; 
-              padding-bottom: 90px;
+              background: #fff;
+            }
+            .page-container {
+              width: 100%;
+              margin: 0;
+              padding: 0;
+              box-shadow: none;
+            }
+            .letterhead-header {
+              margin: 12mm 15mm 10mm 15mm;
+              width: calc(100% - 30mm);
+            }
+            .content { 
+              margin: 0 20mm 25mm 20mm;
             }
             .no-print { 
               display: none !important; 
@@ -269,10 +297,10 @@ export default function TSRDrafting() {
             .letterhead-footer-stamp {
               display: block !important;
               position: fixed;
-              bottom: -15px;
-              left: 0;
-              right: 0;
-              text-align: center;
+              bottom: 8mm;
+              left: 15mm;
+              right: 15mm;
+              width: calc(100% - 30mm);
               z-index: 9999;
             }
             .letterhead-footer-stamp img {
@@ -284,18 +312,20 @@ export default function TSRDrafting() {
         </style>
       </head>
       <body>
-        <div class="letterhead-header">
-          <img src="${HEADER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Header" />
+        <div class="page-container">
+          <div class="letterhead-header">
+            <img src="${HEADER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Header" />
+          </div>
+
+          <div class="content">${text}</div>
+
+          <div class="letterhead-footer-stamp">
+            <img src="${FOOTER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Footer" />
+          </div>
         </div>
 
-        <div class="content">${text}</div>
-
-        <div class="letterhead-footer-stamp">
-          <img src="${FOOTER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Footer" />
-        </div>
-
-        <div class="no-print" style="text-align: center; margin-top: 30px; position: sticky; bottom: 20px;">
-          <button onclick="window.print()" style="padding: 12px 30px; background: #1e3c72; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Print / Save as PDF</button>
+        <div class="no-print" style="text-align: center; margin-top: 30px; margin-bottom: 50px;">
+          <button onclick="window.print()" style="padding: 12px 30px; background: #1e3c72; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">Print / Save as PDF</button>
         </div>
       </body>
       </html>
