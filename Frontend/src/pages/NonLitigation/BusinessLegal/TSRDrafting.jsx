@@ -296,7 +296,7 @@ export default function TSRDrafting() {
 
     // Replace default text signature block with dynamically compiled digital signature block at the bottom
     if (applyDigitalSignature) {
-      const signatureMarkerRegex = /(NARAYAN L\. KHAMKAR|नारायण एल\. खामकर)(?:\s+ADVOCATE)?(?:\s+(?:&|and)?\s*NOTARY)?/gi;
+      const signatureMarkerRegex = /(NARAYAN L\. KHAMKAR|नारायण एल\. खामकर)(?:\s+ADVOCATE)?(?:\s+(?:&amp;|&|and)?\s*NOTARY)?/gi;
       const now = new Date();
       const dd = String(now.getDate()).padStart(2, "0");
       const mm = String(now.getMonth() + 1).padStart(2, "0");
