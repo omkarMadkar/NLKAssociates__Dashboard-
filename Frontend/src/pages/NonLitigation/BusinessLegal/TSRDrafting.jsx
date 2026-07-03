@@ -218,12 +218,71 @@ export default function TSRDrafting() {
     }
 
     // Escape basic HTML characters to avoid parsing errors
-    let formattedText = text
+    let escapedText = text
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+
+    // Parse the escaped text line-by-line to convert List Items into styled tables
+    const lines = escapedText.split("\n");
+    const parsedLines = [];
+    let tableRows = [];
+
+    const flushTable = () => {
+      if (tableRows.length > 0) {
+        let tableHtml = `
+          <table class="provisions-table" style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11px; font-family: 'Times New Roman', serif;">
+            <thead>
+              <tr style="background-color: #f8fafc; border-bottom: 2.5px solid #334155;">
+                <th style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center; width: 10%; font-weight: bold; text-transform: uppercase;">Sr. No.</th>
+                <th style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: left; width: 75%; font-weight: bold; text-transform: uppercase;">Particulars / Queries</th>
+                <th style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center; width: 15%; font-weight: bold; text-transform: uppercase;">Response</th>
+              </tr>
+            </thead>
+            <tbody>`;
+        
+        tableRows.forEach(row => {
+          const ansStyle = row.answer.toUpperCase() === "YES" ? "color: #15803d; font-weight: bold;" : 
+                           row.answer.toUpperCase() === "NO" ? "color: #b91c1c; font-weight: bold;" : "font-weight: bold; color: #475569;";
+          tableHtml += `
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${row.code}</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: left; line-height: 1.4;">${row.question}</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center; ${ansStyle}">${row.answer}</td>
+              </tr>`;
+        });
+
+        tableHtml += `
+            </tbody>
+          </table>`;
+        
+        // Remove all newlines and collapse multiple spaces to avoid pre-wrap empty-line rendering issues
+        tableHtml = tableHtml.replace(/\n/g, "").replace(/\s{2,}/g, " ");
+        parsedLines.push(tableHtml);
+        tableRows = [];
+      }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      const match = line.match(/^(\d+\.\d+)\s+(.+?)\s+(Yes|No|NA|-)$/i);
+      
+      if (match) {
+        tableRows.push({
+          code: match[1],
+          question: match[2].trim(),
+          answer: match[3].trim()
+        });
+      } else {
+        flushTable();
+        parsedLines.push(lines[i]);
+      }
+    }
+    flushTable();
+
+    let formattedText = parsedLines.join("\n");
 
     // Replace contiguous underscores, box-drawing characters, dashes, etc. with responsive HR lines
     formattedText = formattedText.replace(/[━_─-]{10,}/g, '<hr class="section-divider" />');
@@ -249,6 +308,10 @@ export default function TSRDrafting() {
             color: #000;
           }
           
+          .page-border {
+            display: none;
+          }
+
           .page-container {
             background: #fff;
             width: 210mm;
@@ -257,6 +320,7 @@ export default function TSRDrafting() {
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             box-sizing: border-box;
             position: relative;
+            border: 1px solid #cbd5e1;
           }
 
           .letterhead-header {
@@ -290,6 +354,20 @@ export default function TSRDrafting() {
             display: none;
           }
 
+          .print-table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          
+          .print-table td {
+            padding: 0;
+            border: none;
+          }
+
+          .print-table thead, .print-table tfoot {
+            display: none;
+          }
+
           @page {
             size: A4;
             margin: 0;
@@ -299,39 +377,82 @@ export default function TSRDrafting() {
             body { 
               background: #fff;
             }
+
+            .page-border {
+              display: block !important;
+              position: fixed;
+              top: 10mm;
+              bottom: 10mm;
+              left: 12mm;
+              right: 12mm;
+              border: 1.5px solid #334155;
+              pointer-events: none;
+              z-index: 10000;
+              box-sizing: border-box;
+            }
+
             .page-container {
               width: 100%;
               margin: 0;
               padding: 0;
               box-shadow: none;
+              border: none;
             }
+
+            .print-table thead {
+              display: table-header-group;
+            }
+
+            .print-table tfoot {
+              display: table-footer-group;
+            }
+
+            .header-spacer {
+              height: 42mm;
+            }
+
+            .footer-spacer {
+              height: 35mm;
+            }
+
             .letterhead-header {
-              margin: 12mm auto 10mm auto;
-              width: 100%;
+              position: fixed;
+              top: 14mm;
+              left: 20mm;
+              right: 20mm;
+              width: calc(100% - 40mm);
               text-align: center;
+              z-index: 9999;
+              margin: 0;
             }
+
             .letterhead-header img {
               max-width: 100%;
               height: auto;
               max-height: 28mm;
               display: inline-block;
             }
+
             .content { 
-              margin: 0 20mm 25mm 20mm;
+              margin: 0 20mm;
             }
+
             .no-print { 
               display: none !important; 
             }
+
             .letterhead-footer-stamp {
               display: block !important;
               position: fixed;
-              bottom: 8mm;
-              left: 0;
-              right: 0;
-              width: 100%;
+              bottom: 14mm;
+              left: 20mm;
+              right: 20mm;
+              width: calc(100% - 40mm);
               text-align: center;
               z-index: 9999;
+              margin: 0;
             }
+
             .letterhead-footer-stamp img {
               max-width: 100%;
               height: auto;
@@ -342,12 +463,36 @@ export default function TSRDrafting() {
         </style>
       </head>
       <body>
+        <div class="page-border"></div>
+
         <div class="page-container">
           <div class="letterhead-header">
             <img src="${HEADER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Header" />
           </div>
 
-          <div class="content">${formattedText}</div>
+          <table class="print-table">
+            <thead>
+              <tr>
+                <td>
+                  <div class="header-spacer"></div>
+                </td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="content">${formattedText}</div>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>
+                  <div class="footer-spacer"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
           <div class="letterhead-footer-stamp">
             <img src="${FOOTER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Footer" />
