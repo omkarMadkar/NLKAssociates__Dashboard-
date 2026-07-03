@@ -287,6 +287,12 @@ export default function TSRDrafting() {
     // Replace contiguous underscores, box-drawing characters, dashes, etc. with responsive HR lines
     formattedText = formattedText.replace(/[━_─-]{10,}/g, '<hr class="section-divider" />');
 
+    // Wrap divider + heading in a page-break-avoid container so they don't get separated
+    const dividerHeadingRegex = /<hr class="section-divider" \/>\s*\n\s*(•\s*PART\s+[IVX]+[^\n]+)/gi;
+    formattedText = formattedText.replace(dividerHeadingRegex, (match, headingText) => {
+      return `<div class="keep-together" style="page-break-inside: avoid; break-inside: avoid; margin: 0;"><hr class="section-divider" />\n${headingText}</div>`;
+    });
+
     const docTitle =
       draftType === "tsr"
         ? `TSR Scrutiny Report - ${refNo}`
@@ -308,15 +314,11 @@ export default function TSRDrafting() {
             color: #000;
           }
           
-          .page-border {
-            display: none;
-          }
-
           .page-container {
             background: #fff;
             width: 210mm;
             margin: 30px auto;
-            padding: 20mm;
+            padding: 25.4mm;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             box-sizing: border-box;
             position: relative;
@@ -337,9 +339,9 @@ export default function TSRDrafting() {
 
           .content { 
             white-space: pre-wrap; 
-            font-size: 13px; 
+            font-size: 13.5px; 
             text-align: justify;
-            line-height: 1.6;
+            line-height: 1.5;
           }
 
           .section-divider {
@@ -378,19 +380,6 @@ export default function TSRDrafting() {
               background: #fff;
             }
 
-            .page-border {
-              display: block !important;
-              position: fixed;
-              top: 10mm;
-              bottom: 10mm;
-              left: 12mm;
-              right: 12mm;
-              border: 1.5px solid #334155;
-              pointer-events: none;
-              z-index: 10000;
-              box-sizing: border-box;
-            }
-
             .page-container {
               width: 100%;
               margin: 0;
@@ -408,19 +397,19 @@ export default function TSRDrafting() {
             }
 
             .header-spacer {
-              height: 42mm;
+              height: 48mm;
             }
 
             .footer-spacer {
-              height: 35mm;
+              height: 40mm;
             }
 
             .letterhead-header {
               position: fixed;
-              top: 14mm;
-              left: 20mm;
-              right: 20mm;
-              width: calc(100% - 40mm);
+              top: 15mm;
+              left: 25.4mm;
+              right: 25.4mm;
+              width: calc(100% - 50.8mm);
               text-align: center;
               z-index: 9999;
               margin: 0;
@@ -434,7 +423,7 @@ export default function TSRDrafting() {
             }
 
             .content { 
-              margin: 0 20mm;
+              margin: 0 25.4mm;
             }
 
             .no-print { 
@@ -444,10 +433,10 @@ export default function TSRDrafting() {
             .letterhead-footer-stamp {
               display: block !important;
               position: fixed;
-              bottom: 14mm;
-              left: 20mm;
-              right: 20mm;
-              width: calc(100% - 40mm);
+              bottom: 12mm;
+              left: 25.4mm;
+              right: 25.4mm;
+              width: calc(100% - 50.8mm);
               text-align: center;
               z-index: 9999;
               margin: 0;
@@ -463,8 +452,6 @@ export default function TSRDrafting() {
         </style>
       </head>
       <body>
-        <div class="page-border"></div>
-
         <div class="page-container">
           <div class="letterhead-header">
             <img src="${HEADER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Header" />
