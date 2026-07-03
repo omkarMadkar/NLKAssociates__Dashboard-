@@ -19,6 +19,7 @@ import {
   generateEnglishWaitingReport,
   generateMarathiWaitingReport,
 } from "../../../utils/tsrTemplateEngine";
+import { HEADER_IMAGE_B64, FOOTER_IMAGE_B64 } from "../../../utils/letterheadImages";
 
 const STATUS_STYLES = {
   draft: { bg: "#f1f5f9", color: "#475569", label: "Draft" },
@@ -237,53 +238,14 @@ export default function TSRDrafting() {
             background: #fff;
           }
           
-          .letterhead {
-            border-bottom: 3px double #1e3c72;
-            padding-bottom: 12px;
+          .letterhead-header {
             margin-bottom: 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            width: 100%;
           }
-          .crest-container {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-          }
-          .advocate-crest {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: 2px solid #1e3c72;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            color: #1e3c72;
-            font-weight: 700;
-          }
-          .title-section h1 {
-            font-family: 'Cinzel', serif;
-            font-size: 20px;
-            font-weight: 800;
-            color: #1e3c72;
-            margin: 0;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-          }
-          .title-section h2 {
-            font-style: italic;
-            font-size: 13px;
-            font-weight: normal;
-            color: #334155;
-            margin: 2px 0 0 0;
-          }
-          .contacts {
-            text-align: right;
-            font-size: 10px;
-            color: #475569;
-            font-family: 'Montserrat', sans-serif;
-            line-height: 1.4;
+          .letterhead-header img {
+            width: 100%;
+            height: auto;
+            display: block;
           }
 
           .content { 
@@ -292,31 +254,45 @@ export default function TSRDrafting() {
             text-align: justify;
           }
           
+          .letterhead-footer-stamp {
+            display: none;
+          }
+
           @media print {
-            body { padding: 0; }
-            .no-print { display: none; }
+            body { 
+              padding: 0; 
+              padding-bottom: 90px;
+            }
+            .no-print { 
+              display: none !important; 
+            }
+            .letterhead-footer-stamp {
+              display: block !important;
+              position: fixed;
+              bottom: -15px;
+              left: 0;
+              right: 0;
+              text-align: center;
+              z-index: 9999;
+            }
+            .letterhead-footer-stamp img {
+              width: 100%;
+              height: auto;
+              display: block;
+            }
           }
         </style>
       </head>
       <body>
-        <div class="letterhead">
-          <div class="crest-container">
-            <div class="advocate-crest">⚖</div>
-            <div class="title-section">
-              <h1>NARAYAN L. KHAMKAR</h1>
-              <h2>B.S.L., LL.B.(Spl.) Advocate & Notary</h2>
-              <div style="font-size: 9px; font-weight: bold; color: #1e3c72; margin-top: 3px;">GOVERNMENT OF INDIA</div>
-            </div>
-          </div>
-          <div class="contacts">
-            <strong>Hadapsar Office:</strong><br>
-            Hadapsar S.O., Pune - 411028<br>
-            Cell: +91 98224 56789 | Email: nlk@gmail.com<br>
-            <strong>License No:</strong> NOT-MH-6543/2020
-          </div>
+        <div class="letterhead-header">
+          <img src="${HEADER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Header" />
         </div>
 
         <div class="content">${text}</div>
+
+        <div class="letterhead-footer-stamp">
+          <img src="${FOOTER_IMAGE_B64}" alt="Narayan L. Khamkar Letterhead Footer" />
+        </div>
 
         <div class="no-print" style="text-align: center; margin-top: 30px; position: sticky; bottom: 20px;">
           <button onclick="window.print()" style="padding: 12px 30px; background: #1e3c72; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Print / Save as PDF</button>
