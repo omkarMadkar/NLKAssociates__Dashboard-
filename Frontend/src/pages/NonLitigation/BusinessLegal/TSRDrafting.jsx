@@ -260,13 +260,15 @@ export default function TSRDrafting() {
           }
 
           .letterhead-header {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             width: 100%;
+            text-align: center;
           }
           .letterhead-header img {
-            width: 100%;
+            max-width: 100%;
             height: auto;
-            display: block;
+            max-height: 28mm;
+            display: inline-block;
           }
 
           .content { 
@@ -304,8 +306,15 @@ export default function TSRDrafting() {
               box-shadow: none;
             }
             .letterhead-header {
-              margin: 12mm 15mm 10mm 15mm;
-              width: calc(100% - 30mm);
+              margin: 12mm auto 10mm auto;
+              width: 100%;
+              text-align: center;
+            }
+            .letterhead-header img {
+              max-width: 100%;
+              height: auto;
+              max-height: 28mm;
+              display: inline-block;
             }
             .content { 
               margin: 0 20mm 25mm 20mm;
@@ -317,15 +326,17 @@ export default function TSRDrafting() {
               display: block !important;
               position: fixed;
               bottom: 8mm;
-              left: 15mm;
-              right: 15mm;
-              width: calc(100% - 30mm);
+              left: 0;
+              right: 0;
+              width: 100%;
+              text-align: center;
               z-index: 9999;
             }
             .letterhead-footer-stamp img {
-              width: 100%;
+              max-width: 100%;
               height: auto;
-              display: block;
+              max-height: 22mm;
+              display: inline-block;
             }
           }
         </style>
