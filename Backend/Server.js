@@ -23,7 +23,6 @@ const tsrTitleEvidenceRoutes = require("./routes/tsrTitleEvidenceRoutes");
 const masterDBRoutes = require("./routes/masterDBRoutes");
 
 const tsrDraftRoutes = require("./routes/tsrDraftRoutes");
-const pdfSigningRoutes = require("./routes/pdfSigningRoutes");
 const path = require('path');
 const fs = require('fs');
 
@@ -36,7 +35,8 @@ const app = express();
 // MIDDLEWARE
 app.use(cors());
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // CREATE uploads folder if not exists
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -67,7 +67,6 @@ app.use("/api/tsr-title-evidence",tsrTitleEvidenceRoutes);
 
 app.use("/api/tsr-draft", tsrDraftRoutes);
 app.use("/api/masterdb", masterDBRoutes);
-app.use("/api/pdf-signing", pdfSigningRoutes);
 
 
 // ERROR HANDLER
