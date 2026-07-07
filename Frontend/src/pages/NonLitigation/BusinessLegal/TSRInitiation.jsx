@@ -498,6 +498,7 @@ export default function TSRInitiation() {
     if (!form.appId.trim()) e.appId = "Required";
     if (!form.applicant.trim()) e.applicant = "Required";
     if (!form.initiationDate) e.initiationDate = "Required";
+    if (!form.taluka.trim()) e.taluka = "Required";
     setErrors(e);
     return !Object.keys(e).length;
   };
@@ -551,8 +552,23 @@ export default function TSRInitiation() {
     setSubmitting(true);
 
     try {
+      // Filter out completely empty land parcels to avoid passing empty items to backend
+      const cleanedLandParcels = form.landParcels.filter(
+        (p) =>
+          p.surveyNo?.trim() ||
+          p.hissaNo?.trim() ||
+          p.area?.trim() ||
+          p.unit?.trim() ||
+          p.remarks?.trim()
+      );
+
+      const submitPayload = {
+        ...form,
+        landParcels: cleanedLandParcels,
+      };
+
       // STEP 1 - SAVE PART I (Basic Info)
-      const tsrResponse = await API.post("/tsr-initiation/create", form, {
+      const tsrResponse = await API.post("/tsr-initiation/create", submitPayload, {
         headers: authHeader(),
       });
 

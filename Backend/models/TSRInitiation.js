@@ -44,7 +44,7 @@ const TSRInitiationSchema = new mongoose.Schema(
 
         unit: {
           type: String,
-          enum: ["Sq. Mtr", "Sq. Ft", "Are", "Hectare", "Acre", "Guntha"],
+          enum: ["", "Sq. Mtr", "Sq. Ft", "Are", "Hectare", "Acre", "Guntha"],
           default: "",
         },
 

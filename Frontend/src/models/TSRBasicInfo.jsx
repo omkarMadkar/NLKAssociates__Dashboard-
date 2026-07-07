@@ -158,14 +158,17 @@ export default function TSRBasicInfo({
 
       <div style={grid3}>
         <div>
-          <label style={lbl}>Taluka</label>
+          <label style={lbl}>
+            Taluka <span style={{ color: "#dc2626" }}>*</span>
+          </label>
           <input
             name="taluka"
             value={form.taluka}
             onChange={handleChange}
             placeholder="e.g. Haveli"
-            style={inp}
+            style={{ ...inp, borderColor: errors.taluka ? "#dc2626" : "var(--border)" }}
           />
+          {errors.taluka && <span style={errTxt}>{errors.taluka}</span>}
         </div>
         <div>
           <label style={lbl}>RCC Construction standing area</label>
