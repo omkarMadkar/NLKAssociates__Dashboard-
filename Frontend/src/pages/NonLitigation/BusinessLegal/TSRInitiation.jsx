@@ -680,24 +680,45 @@ export default function TSRInitiation() {
         tsrId = tsrResponse.data.data._id;
       }
 
+      const isDocumentBlank = (doc) => {
+        return (
+          !doc.documentType?.trim() &&
+          !doc.executionDate &&
+          !doc.executedBy?.trim() &&
+          !doc.executedInFavourOf?.trim() &&
+          !doc.registrationOffice?.trim() &&
+          !doc.registrationNumber?.trim() &&
+          !doc.remarks?.trim()
+        );
+      };
+
       // STEP 2 - SAVE/UPDATE PART II (Documents List)
       await Promise.all(
         documentList.map((doc) => {
           if (doc._id) {
-            return API.put(`/tsr-document-list/${doc._id}`, doc, {
-              headers: authHeader(),
-            });
-          } else {
-            return API.post(
-              "/tsr-document-list",
-              {
-                tsrId,
-                ...doc,
-              },
-              {
+            if (isDocumentBlank(doc)) {
+              return API.delete(`/tsr-document-list/${doc._id}`, {
                 headers: authHeader(),
-              },
-            );
+              });
+            } else {
+              return API.put(`/tsr-document-list/${doc._id}`, doc, {
+                headers: authHeader(),
+              });
+            }
+          } else {
+            if (!isDocumentBlank(doc)) {
+              return API.post(
+                "/tsr-document-list",
+                {
+                  tsrId,
+                  ...doc,
+                },
+                {
+                  headers: authHeader(),
+                },
+              );
+            }
+            return Promise.resolve();
           }
         }),
       );
@@ -720,20 +741,29 @@ export default function TSRInitiation() {
       await Promise.all(
         titleEvidence.map((item) => {
           if (item._id) {
-            return API.put(`/tsr-title-evidence/${item._id}`, item, {
-              headers: authHeader(),
-            });
-          } else {
-            return API.post(
-              "/tsr-title-evidence",
-              {
-                tsrId,
-                ...item,
-              },
-              {
+            if (isDocumentBlank(item)) {
+              return API.delete(`/tsr-title-evidence/${item._id}`, {
                 headers: authHeader(),
-              },
-            );
+              });
+            } else {
+              return API.put(`/tsr-title-evidence/${item._id}`, item, {
+                headers: authHeader(),
+              });
+            }
+          } else {
+            if (!isDocumentBlank(item)) {
+              return API.post(
+                "/tsr-title-evidence",
+                {
+                  tsrId,
+                  ...item,
+                },
+                {
+                  headers: authHeader(),
+                },
+              );
+            }
+            return Promise.resolve();
           }
         }),
       );
