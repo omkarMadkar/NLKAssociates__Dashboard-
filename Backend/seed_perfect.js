@@ -4,6 +4,8 @@ const TSRInitiation = require('./models/TSRInitiation');
 const TSROtherProvision = require('./models/TSROtherProvision');
 const TSRWaitingReport = require('./models/TSRWaitingReport');
 const TSRTitleFlow = require('./models/TSRTitleFlow');
+const TSRDocumentList = require('./models/TSRDocumentsList');
+const TSRTitleEvidence = require('./models/TSRTitleEvidence');
 
 const OTHER_PROVISIONS_1 = [
   { code: "5.1", question: "Whether provisions of urban land ceiling act are applicable?", answer: "No", remarks: "NOC obtained from ULC authority" },
@@ -85,6 +87,22 @@ const TITLE_EVENTS_1 = [
 
 const TITLE_EVENTS_2 = [
   { eventNo: 1, eventType: "Conveyance Deed", fromParty: "Dynamic Developers LLP", toParty: "Amit Vinayak Kulkarni", currentOwner: "YES", documentType: "Registered Sale Deed", documentDate: "2021-05-14", registrationNo: "4321/2021", sroName: "SRO Haveli III", propertyDetails: "Gat No. 78, Kothrud, Pune", areaTransferred: "2100 Sq.Ft.", remarks: "Clear chain document", generateParagraph: "YES" }
+];
+
+const DOCUMENTS_1 = [
+  { documentType: "Sale Deed", executionDate: "2015-05-12", executedBy: "Madanlal Shivprasad Sharma", executedInFavourOf: "Rajesh Madanlal Sharma", registrationOffice: "SRO Haveli V", registrationNumber: "7765/2015", remarks: "Original registered copy verified" }
+];
+
+const EVIDENCE_1 = [
+  { documentType: "Mutation Entry 4452", executionDate: "2015-06-10", executedBy: "Tehsildar Haveli", executedInFavourOf: "Rajesh Madanlal Sharma", registrationOffice: "Tehsil Office Haveli", registrationNumber: "ME-4452", remarks: "Certified copy verified" }
+];
+
+const DOCUMENTS_2 = [
+  { documentType: "Sale Deed", executionDate: "2021-05-14", executedBy: "Dynamic Developers LLP", executedInFavourOf: "Amit Vinayak Kulkarni", registrationOffice: "SRO Haveli III", registrationNumber: "4321/2021", remarks: "Original registered deed" }
+];
+
+const EVIDENCE_2 = [
+  { documentType: "Index II", executionDate: "2021-05-14", executedBy: "Sub-Registrar Haveli III", executedInFavourOf: "Amit Vinayak Kulkarni", registrationOffice: "SRO Haveli III", registrationNumber: "Reg-4321/2021", remarks: "Duly registered copy verified" }
 ];
 
 const tsrInitiationsData = [
@@ -177,6 +195,8 @@ async function seed() {
         if (existing.otherProvisionId) await TSROtherProvision.findByIdAndDelete(existing.otherProvisionId);
         if (existing.waitingReportId) await TSRWaitingReport.findByIdAndDelete(existing.waitingReportId);
         if (existing.titleFlowId) await TSRTitleFlow.findByIdAndDelete(existing.titleFlowId);
+        await TSRDocumentList.deleteMany({ tsrId: existing._id });
+        await TSRTitleEvidence.deleteMany({ tsrId: existing._id });
         await TSRInitiation.findByIdAndDelete(existing._id);
       }
     }
@@ -200,6 +220,8 @@ async function seed() {
     await op1.save();
     await wr1.save();
     await tf1.save();
+    await Promise.all(DOCUMENTS_1.map(d => TSRDocumentList.create({ tsrId: tsr1._id, ...d })));
+    await Promise.all(EVIDENCE_1.map(e => TSRTitleEvidence.create({ tsrId: tsr1._id, ...e })));
 
     tsr1.otherProvisionId = op1._id;
     tsr1.waitingReportId = wr1._id;
@@ -226,6 +248,8 @@ async function seed() {
     await op2.save();
     await wr2.save();
     await tf2.save();
+    await Promise.all(DOCUMENTS_2.map(d => TSRDocumentList.create({ tsrId: tsr2._id, ...d })));
+    await Promise.all(EVIDENCE_2.map(e => TSRTitleEvidence.create({ tsrId: tsr2._id, ...e })));
 
     tsr2.otherProvisionId = op2._id;
     tsr2.waitingReportId = wr2._id;

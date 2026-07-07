@@ -4,6 +4,8 @@ const TSRInitiation = require('./models/TSRInitiation');
 const TSROtherProvision = require('./models/TSROtherProvision');
 const TSRWaitingReport = require('./models/TSRWaitingReport');
 const TSRTitleFlow = require('./models/TSRTitleFlow');
+const TSRDocumentList = require('./models/TSRDocumentsList');
+const TSRTitleEvidence = require('./models/TSRTitleEvidence');
 
 const OTHER_PROVISIONS_MORE_1 = [
   { code: "5.1", question: "Whether provisions of urban land ceiling act are applicable?", answer: "No", remarks: "Exempt category" },
@@ -86,6 +88,22 @@ const TITLE_EVENTS_MORE_1 = [
 const TITLE_EVENTS_MORE_2 = [
   { eventNo: 1, eventType: "ORIGINAL_OWNER", fromParty: "Suresh Narayan Deshmukh", toParty: "Gopal Suresh Deshmukh", currentOwner: "NO", documentType: "Inheritance", documentDate: "1998-10-10", registrationNo: "Inheritance Case 92/1998", sroName: "Tehsildar Haveli", propertyDetails: "Survey No. 104, Hissa No. 3, Pune", areaTransferred: "5000 Sq.Ft.", remarks: "Heirship certificate verified", generateParagraph: "YES" },
   { eventNo: 2, eventType: "TRANSFER", fromParty: "Gopal Suresh Deshmukh", toParty: "Sneha Rahul Deshmukh", currentOwner: "YES", documentType: "Registered Sale Deed", documentDate: "2022-07-20", registrationNo: "9876/2022", sroName: "SRO Haveli IX", propertyDetails: "Survey No. 104, Hissa No. 3, Pune", areaTransferred: "5000 Sq.Ft.", remarks: "Duly registered and stamped", generateParagraph: "YES" }
+];
+
+const DOCUMENTS_MORE_1 = [
+  { documentType: "Gift Deed", executionDate: "2018-02-18", executedBy: "Vinod Keshav Kadam", executedInFavourOf: "Rohan Vinod Kadam", registrationOffice: "SRO Haveli II", registrationNumber: "1234/2018", remarks: "Original registered gift deed verified" }
+];
+
+const EVIDENCE_MORE_1 = [
+  { documentType: "Index II", executionDate: "2018-02-18", executedBy: "Sub-Registrar Haveli II", executedInFavourOf: "Rohan Vinod Kadam", registrationOffice: "SRO Haveli II", registrationNumber: "Reg-1234/2018", remarks: "Duly registered Index II copy" }
+];
+
+const DOCUMENTS_MORE_2 = [
+  { documentType: "Sale Deed", executionDate: "2022-07-20", executedBy: "Gopal Suresh Deshmukh", executedInFavourOf: "Sneha Rahul Deshmukh", registrationOffice: "SRO Haveli IX", registrationNumber: "9876/2022", remarks: "Original registered copy verified" }
+];
+
+const EVIDENCE_MORE_2 = [
+  { documentType: "Inheritance Heirship Certificate", executionDate: "1998-10-10", executedBy: "Tehsildar Haveli", executedInFavourOf: "Gopal Suresh Deshmukh", registrationOffice: "Tehsil Office Haveli", registrationNumber: "Inheritance Case 92/1998", remarks: "Certified inheritance entry verified" }
 ];
 
 const tsrInitiationsMoreData = [
@@ -194,6 +212,8 @@ async function seedMore() {
         if (existing.otherProvisionId) await TSROtherProvision.findByIdAndDelete(existing.otherProvisionId);
         if (existing.waitingReportId) await TSRWaitingReport.findByIdAndDelete(existing.waitingReportId);
         if (existing.titleFlowId) await TSRTitleFlow.findByIdAndDelete(existing.titleFlowId);
+        await TSRDocumentList.deleteMany({ tsrId: existing._id });
+        await TSRTitleEvidence.deleteMany({ tsrId: existing._id });
         await TSRInitiation.findByIdAndDelete(existing._id);
       }
     }
@@ -216,6 +236,8 @@ async function seedMore() {
     await op1.save();
     await wr1.save();
     await tf1.save();
+    await Promise.all(DOCUMENTS_MORE_1.map(d => TSRDocumentList.create({ tsrId: tsr1._id, ...d })));
+    await Promise.all(EVIDENCE_MORE_1.map(e => TSRTitleEvidence.create({ tsrId: tsr1._id, ...e })));
 
     tsr1.otherProvisionId = op1._id;
     tsr1.waitingReportId = wr1._id;
@@ -241,6 +263,8 @@ async function seedMore() {
     await op2.save();
     await wr2.save();
     await tf2.save();
+    await Promise.all(DOCUMENTS_MORE_2.map(d => TSRDocumentList.create({ tsrId: tsr2._id, ...d })));
+    await Promise.all(EVIDENCE_MORE_2.map(e => TSRTitleEvidence.create({ tsrId: tsr2._id, ...e })));
 
     tsr2.otherProvisionId = op2._id;
     tsr2.waitingReportId = wr2._id;
