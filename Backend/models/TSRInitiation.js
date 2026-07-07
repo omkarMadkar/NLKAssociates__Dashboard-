@@ -54,6 +54,8 @@ const TSRInitiationSchema = new mongoose.Schema(
         },
       },
     ],
+    entireLandDescription: { type: String, default: "" },
+    subjectPropertyDescription: { type: String, default: "" },
 
     // Boundaries
     boundaryEast: { type: String, default: "" },

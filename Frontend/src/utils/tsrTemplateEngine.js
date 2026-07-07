@@ -41,6 +41,23 @@ export function generateEnglishTSR(data) {
   const south = data.boundarySouth || "[South Boundary]";
   const north = data.boundaryNorth || "[North Boundary]";
 
+  const entireLandText = data.entireLandDescription?.trim()
+    ? data.entireLandDescription
+    : `All that piece and parcel of property bearing land situated at Village – ${village}, Taluka – ${taluka}, District – ${district}, within the jurisdiction of Sub-Registrar ${taluka} and within the limits of ${municipalCouncil}, comprising the following land parcels:\n\n${parcelDescription}`;
+
+  const subjectPropertyText = data.subjectPropertyDescription?.trim()
+    ? data.subjectPropertyDescription
+    : `Together with R.C.C. construction standing thereon admeasuring about ${construction}
+on ground floor, bearing Property No. ${municipalNo},
+and bounded as follows:
+
+On or towards East  : ${east}
+On or towards West  : ${west}
+On or towards South : ${south}
+On or towards North : ${north}
+
+Hereinafter, referred to as the "Subject Property".`;
+
   //PART II : List of Documents Submitted for Scrutiny and Legal Opinion
   const documentList =
     data.documentList?.length > 0
@@ -152,20 +169,9 @@ Subject: Legal Scrutiny Report pertaining to the file of ${applicant} and ${coAp
 
 • PART I : PROPERTY DETAILS
 
-All that piece and parcel of property bearing land situated at Village – ${village}, Taluka – ${taluka}, District – ${district}, within the jurisdiction of Sub-Registrar ${taluka} and within the limits of ${municipalCouncil}, comprising the following land parcels:
+${entireLandText}
 
-${parcelDescription}
-
-Together with R.C.C. construction standing thereon admeasuring about ${construction}
-on ground floor, bearing Property No. ${municipalNo},
-and bounded as follows:
-
-On or towards East  : ${east}
-On or towards West  : ${west}
-On or towards South : ${south}
-On or towards North : ${north}
-
-Hereinafter, referred to as the "Subject Property".
+${subjectPropertyText}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -293,7 +299,11 @@ Subject: Scrutiny Waiting Report pertaining to pending documents of ${applicant}
 
 • PROPERTY DESCRIPTION:
 
-All that piece and parcel of property situated at Village – ${village}, Taluka – ${taluka}, District – ${district}, within limits of ${municipalCouncil}.
+${data.subjectPropertyDescription?.trim()
+  ? data.subjectPropertyDescription
+  : data.entireLandDescription?.trim()
+    ? data.entireLandDescription
+    : `All that piece and parcel of property situated at Village – ${village}, Taluka – ${taluka}, District – ${district}, within limits of ${municipalCouncil}.`}
 
 • WAITING / PENDING DOCUMENTS SCRUTINY STATUS:
 
@@ -377,7 +387,11 @@ ${bankBranch}.
 
 • मालमत्तेचे वर्णन:
 
-मोजे गाव – ${village}, तालुका – ${taluka}, जिल्हा – ${district}, हदद ${municipalCouncil} मधील मालमत्ता.
+${data.subjectPropertyDescription?.trim()
+  ? data.subjectPropertyDescription
+  : data.entireLandDescription?.trim()
+    ? data.entireLandDescription
+    : `मोजे गाव – ${village}, तालुका – ${taluka}, जिल्हा – ${district}, हदद ${municipalCouncil} मधील मालमत्ता.`}
 
 • प्रलंबित व उपलब्ध कागदपत्रांची सद्यस्थिती:
 

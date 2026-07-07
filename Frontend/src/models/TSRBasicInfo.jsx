@@ -225,6 +225,29 @@ export default function TSRBasicInfo({
         </div>
       </div>
 
+      {/* Description of entire land property & Description of Subject property */}
+      <div style={{ marginBottom: 24 }}>
+        <label style={lbl}>Description of entire land property</label>
+        <textarea
+          name="entireLandDescription"
+          value={form.entireLandDescription || ""}
+          onChange={handleChange}
+          placeholder="Enter description of entire land property here..."
+          style={{ ...inp, height: 100, resize: "vertical", fontFamily: "inherit", fontSize: 13.5 }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <label style={lbl}>Description of Subject property</label>
+        <textarea
+          name="subjectPropertyDescription"
+          value={form.subjectPropertyDescription || ""}
+          onChange={handleChange}
+          placeholder="Enter description of subject property here..."
+          style={{ ...inp, height: 100, resize: "vertical", fontFamily: "inherit", fontSize: 13.5 }}
+        />
+      </div>
+
       {/* Land Parcels */}
       <div>
         <label style={lbl}>Detailed Survey / Hissa No descriptions</label>

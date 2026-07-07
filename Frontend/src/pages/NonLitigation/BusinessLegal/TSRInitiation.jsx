@@ -22,6 +22,8 @@ const INITIAL = {
   bankBranch: "Hadapsar Branch, Pune",
   municipalPropertyNo: "",
   rccConstructionArea: "",
+  entireLandDescription: "",
+  subjectPropertyDescription: "",
   village: "",
   taluka: "",
   district: "",
