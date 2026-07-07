@@ -106,6 +106,8 @@ const tsrInitiationsMoreData = [
     taluka: "Haveli",
     district: "Pune",
     municipalCouncil: "Pune Municipal Corporation",
+    entireLandDescription: "All that piece and parcel of land bearing Gat No. 90, Hissa No. 3/A, situated at Village Kothrud, Taluka Haveli, District Pune, within the limits of Pune Municipal Corporation, admeasuring approximately 4.2 Gunthas.",
+    subjectPropertyDescription: "All that piece and parcel of Flat No. A-402, admeasuring about 1,150 Sq.Ft., on the 4th Floor of the building known as \"Green Fields\", constructed on land Gat No. 90/3/A, Kothrud, Pune, and bounded towards East by Wing B of Society, West by Internal Road, South by Open garden plot, and North by Adjacent Wing C.",
     landParcels: [
       {
         surveyNo: "90",
@@ -149,6 +151,8 @@ const tsrInitiationsMoreData = [
     taluka: "Haveli",
     district: "Pune",
     municipalCouncil: "Pune Municipal Corporation",
+    entireLandDescription: "All that piece and parcel of land bearing Survey No. 104, Hissa No. 3, situated at Village Hadapsar, Taluka Haveli, District Pune, admeasuring 0.05 Hectares.",
+    subjectPropertyDescription: "All that piece and parcel of land bearing Survey No. 104/3, Hadapsar, Pune, admeasuring 0.05 Hectares, along with R.C.C. structure standing thereon admeasuring 1,850 Sq.Ft., bearing Property No. PMC/HDP/224, and bounded towards East by Adjacent Nala/Water Body, West by Gat No. 105 boundary line, South by Main Hadapsar Road (120 feet), and North by Plot No. 104-B residential layout.",
     landParcels: [
       {
         surveyNo: "104",

@@ -105,6 +105,8 @@ const tsrInitiationsData = [
     taluka: "Haveli",
     district: "Pune",
     municipalCouncil: "Pune Municipal Corporation",
+    entireLandDescription: "All that piece and parcel of land bearing Gat No. 124, Hissa No. 2/A/1, situated at Village Hadapsar, Taluka Haveli, District Pune, within the jurisdiction of Sub-Registrar Haveli and limits of Pune Municipal Corporation, admeasuring approximately 5.5 Gunthas.",
+    subjectPropertyDescription: "All that piece and parcel of residential Flat No. A-9 constructed on the GROUND Floor of the building admeasuring about 1,550 Sq.Ft., bearing Property No. MNC/2026/A-9, and bounded towards East by Adjacent Internal Road, West by Society Boundary Wall, South by Plot No. 125, and North by Plot No. 123.",
     landParcels: [
       {
         surveyNo: "124",
@@ -139,6 +141,8 @@ const tsrInitiationsData = [
     taluka: "Haveli",
     district: "Pune",
     municipalCouncil: "Pune Municipal Corporation",
+    entireLandDescription: "All that piece and parcel of land situated at Village Kothrud, Taluka Haveli, District Pune, comprising Land Gat No. 88, Hissa No. 1-B, admeasuring 0.08 Hectares.",
+    subjectPropertyDescription: "All that piece and parcel of land bearing Gat No. 88/1-B, Kothrud, Pune, admeasuring 0.08 Hectares, along with R.C.C. structure standing thereon admeasuring 2,100 Sq.Ft., bearing Property No. PMC/KTH/56, and bounded towards East by DP Road, West by Survey No. 89 boundary, South by Flat No. C-3, Royal Park, and North by Main entrance gate.",
     landParcels: [
       {
         surveyNo: "88",
