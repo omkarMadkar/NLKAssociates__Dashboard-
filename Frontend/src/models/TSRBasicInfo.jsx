@@ -158,12 +158,12 @@ export default function TSRBasicInfo({
 
       <div style={grid3}>
         <div>
-          <label style={lbl}>Municipal Property No.</label>
+          <label style={lbl}>Taluka</label>
           <input
-            name="municipalPropertyNo"
-            value={form.municipalPropertyNo}
+            name="taluka"
+            value={form.taluka}
             onChange={handleChange}
-            placeholder="e.g. P/M/83/01239000"
+            placeholder="e.g. Haveli"
             style={inp}
           />
         </div>
@@ -201,12 +201,12 @@ export default function TSRBasicInfo({
           />
         </div>
         <div>
-          <label style={lbl}>Taluka</label>
+          <label style={lbl}>Municipal Property No.</label>
           <input
-            name="taluka"
-            value={form.taluka}
+            name="municipalPropertyNo"
+            value={form.municipalPropertyNo}
             onChange={handleChange}
-            placeholder="e.g. Haveli"
+            placeholder="e.g. P/M/83/01239000"
             style={inp}
           />
         </div>
