@@ -1758,8 +1758,59 @@ export default function TSRInitiation() {
                   )}
                 </div>
 
-                {/* Section 2: Property & Boundaries */}
-                <div></div>
+                {/* Section 2: Documents List */}
+                {viewingDocs?.length > 0 && (
+                  <div>
+                    <h3
+                      style={{
+                        borderBottom: "2px solid #f1f5f9",
+                        paddingBottom: 8,
+                        color: "var(--navy)",
+                        margin: "16px 0 16px 0",
+                        fontSize: 15,
+                        fontWeight: 700,
+                      }}
+                    >
+                      II. Documents List (Submitted for Scrutiny)
+                    </h3>
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: 12,
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        marginBottom: 20,
+                      }}
+                    >
+                      <thead>
+                        <tr style={{ background: "#f8fafc" }}>
+                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Document Type</th>
+                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Date of Execution</th>
+                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Executed By</th>
+                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>In Favour Of</th>
+                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Registration Office</th>
+                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Reg. No.</th>
+                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {viewingDocs.map((doc, idx) => (
+                          <tr key={idx} style={{ borderBottom: idx < viewingDocs.length - 1 ? "1px solid #f1f5f9" : "none" }}>
+                            <td style={{ padding: "8px 12px", fontWeight: 500 }}>{doc.documentType || "—"}</td>
+                            <td style={{ padding: "8px 12px" }}>{doc.executionDate ? new Date(doc.executionDate).toLocaleDateString() : "—"}</td>
+                            <td style={{ padding: "8px 12px" }}>{doc.executedBy || "—"}</td>
+                            <td style={{ padding: "8px 12px" }}>{doc.executedInFavourOf || "—"}</td>
+                            <td style={{ padding: "8px 12px" }}>{doc.registrationOffice || "—"}</td>
+                            <td style={{ padding: "8px 12px" }}>{doc.registrationNumber || "—"}</td>
+                            <td style={{ padding: "8px 12px" }}>{doc.remarks || "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
 
                 {/* Section 3: Land Parcels */}
                 {viewingRecord.landParcels?.length > 0 && (
@@ -1861,60 +1912,6 @@ export default function TSRInitiation() {
                             <td style={{ padding: "8px 12px" }}>
                               {p.remarks || "—"}
                             </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {/* Section 2: Documents List */}
-                {viewingDocs?.length > 0 && (
-                  <div>
-                    <h3
-                      style={{
-                        borderBottom: "2px solid #f1f5f9",
-                        paddingBottom: 8,
-                        color: "var(--navy)",
-                        margin: "16px 0 16px 0",
-                        fontSize: 15,
-                        fontWeight: 700,
-                      }}
-                    >
-                      II. Documents List (Submitted for Scrutiny)
-                    </h3>
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontSize: 12,
-                        border: "1px solid #e2e8f0",
-                        borderRadius: 8,
-                        overflow: "hidden",
-                        marginBottom: 20,
-                      }}
-                    >
-                      <thead>
-                        <tr style={{ background: "#f8fafc" }}>
-                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Document Type</th>
-                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Date of Execution</th>
-                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Executed By</th>
-                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>In Favour Of</th>
-                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Registration Office</th>
-                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Reg. No.</th>
-                          <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Remarks</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {viewingDocs.map((doc, idx) => (
-                          <tr key={idx} style={{ borderBottom: idx < viewingDocs.length - 1 ? "1px solid #f1f5f9" : "none" }}>
-                            <td style={{ padding: "8px 12px", fontWeight: 500 }}>{doc.documentType || "—"}</td>
-                            <td style={{ padding: "8px 12px" }}>{doc.executionDate ? new Date(doc.executionDate).toLocaleDateString() : "—"}</td>
-                            <td style={{ padding: "8px 12px" }}>{doc.executedBy || "—"}</td>
-                            <td style={{ padding: "8px 12px" }}>{doc.executedInFavourOf || "—"}</td>
-                            <td style={{ padding: "8px 12px" }}>{doc.registrationOffice || "—"}</td>
-                            <td style={{ padding: "8px 12px" }}>{doc.registrationNumber || "—"}</td>
-                            <td style={{ padding: "8px 12px" }}>{doc.remarks || "—"}</td>
                           </tr>
                         ))}
                       </tbody>
