@@ -227,6 +227,12 @@ cd NLKAssociatesDashboard-main
     npm run dev
     ```
 
+
+*   cd Backend
+    npm install --save-dev nodemon
+    npm run dev
+
+
 ### 💻 Frontend Installation
 1.  Open a new terminal window and navigate into the `Frontend` directory:
     ```bash
@@ -241,6 +247,10 @@ cd NLKAssociatesDashboard-main
     npm run dev
     ```
 4.  Open your browser and navigate to **`http://localhost:5173`** to access the dashboard portal.
+
+
+*  cd Frontend
+   npm run dev
 
 ---
 
