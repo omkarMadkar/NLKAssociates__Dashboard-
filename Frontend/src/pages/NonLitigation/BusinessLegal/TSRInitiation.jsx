@@ -656,7 +656,15 @@ export default function TSRInitiation() {
       const submitPayload = {
         ...form,
         landParcels: cleanedLandParcels,
+        otherProvisionId: form.otherProvisionId?._id || form.otherProvisionId || null,
+        waitingReportId: form.waitingReportId?._id || form.waitingReportId || null,
+        titleFlowId: form.titleFlowId?._id || form.titleFlowId || null,
       };
+
+      delete submitPayload._id;
+      delete submitPayload.createdAt;
+      delete submitPayload.updatedAt;
+      delete submitPayload.__v;
 
       let tsrId = editingRecordId;
       if (isEditing) {
