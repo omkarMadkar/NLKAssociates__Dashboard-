@@ -250,6 +250,8 @@ export default function TSRInitiation() {
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState("basic");
   const [viewingRecord, setViewingRecord] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingRecordId, setEditingRecordId] = useState(null);
 
   const [documentList, setDocumentList] = useState(INITIAL_DOCUMENT_LIST);
   const [titleEvidence, setTitleEvidence] = useState(INITIAL_TITLE_EVIDENCE);
@@ -545,6 +547,93 @@ export default function TSRInitiation() {
     });
   };
 
+  // ---------- EDIT RECORD HANDLER ----------
+  const handleEdit = async (record) => {
+    setIsEditing(true);
+    setEditingRecordId(record._id);
+
+    // Populate main form
+    setForm({
+      author: record.author || "Narayan",
+      appId: record.appId || "",
+      refNo: record.refNo || "",
+      branch: record.branch || "Main",
+      initiationDate: record.initiationDate || "",
+      applicant: record.applicant || "",
+      coApplicant: record.coApplicant || "",
+      existingOwner: record.existingOwner || "",
+      transactionType: record.transactionType || "",
+      bankBranch: record.bankBranch || "Hadapsar Branch, Pune",
+      municipalPropertyNo: record.municipalPropertyNo || "",
+      rccConstructionArea: record.rccConstructionArea || "",
+      entireLandDescription: record.entireLandDescription || "",
+      subjectPropertyDescription: record.subjectPropertyDescription || "",
+      village: record.village || "",
+      taluka: record.taluka || "",
+      district: record.district || "",
+      municipalCouncil: record.municipalCouncil || "",
+      landParcels: record.landParcels?.length > 0 ? record.landParcels : [
+        { surveyNo: "", hissaNo: "", area: "", unit: "", remarks: "" }
+      ],
+      boundaryEast: record.boundaryEast || "",
+      boundaryWest: record.boundaryWest || "",
+      boundarySouth: record.boundarySouth || "",
+      boundaryNorth: record.boundaryNorth || "",
+      executiveMobile: record.executiveMobile || "",
+      executiveEmail: record.executiveEmail || "",
+    });
+
+    // Fetch document list and title evidence checklist if they exist
+    try {
+      const docRes = await API.get(`/tsr-document-list/${record._id}`, { headers: authHeader() });
+      if (docRes.data?.data?.length > 0) {
+        setDocumentList(docRes.data.data);
+      } else {
+        setDocumentList(INITIAL_DOCUMENT_LIST);
+      }
+    } catch (err) {
+      console.error("Failed to fetch document list for edit:", err);
+      setDocumentList(INITIAL_DOCUMENT_LIST);
+    }
+
+    try {
+      const evidenceRes = await API.get(`/tsr-title-evidence/${record._id}`, { headers: authHeader() });
+      if (evidenceRes.data?.data?.length > 0) {
+        setTitleEvidence(evidenceRes.data.data);
+      } else {
+        setTitleEvidence(INITIAL_TITLE_EVIDENCE);
+      }
+    } catch (err) {
+      console.error("Failed to fetch title evidence for edit:", err);
+      setTitleEvidence(INITIAL_TITLE_EVIDENCE);
+    }
+
+    // Populate other provisions if populated
+    if (record.otherProvisionId?.answers?.length > 0) {
+      setOtherProvisions(record.otherProvisionId.answers);
+    } else {
+      setOtherProvisions(INITIAL_OTHER_PROVISIONS);
+    }
+
+    // Populate waiting report if populated
+    if (record.waitingReportId) {
+      setWaitingReport({
+        chalanNo: record.waitingReportId.chalanNo || "",
+        date: record.waitingReportId.date || "",
+        reportSrNo: record.waitingReportId.reportSrNo || "",
+        documents: record.waitingReportId.documents?.length > 0 ? record.waitingReportId.documents : [],
+      });
+    } else {
+      setWaitingReport(INITIAL_WAITING_REPORT);
+    }
+
+    // Set active tab to 'basic' to start editing
+    setActiveTab("basic");
+
+    // Scroll to the top of the wizard container or window
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   // ---------- SUBMIT (saves all 3 parts) ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -569,26 +658,40 @@ export default function TSRInitiation() {
         landParcels: cleanedLandParcels,
       };
 
-      // STEP 1 - SAVE PART I (Basic Info)
-      const tsrResponse = await API.post("/tsr-initiation/create", submitPayload, {
-        headers: authHeader(),
-      });
+      let tsrId = editingRecordId;
+      if (isEditing) {
+        // STEP 1 - UPDATE PART I (Basic Info)
+        await API.put(`/tsr-initiation/${editingRecordId}`, submitPayload, {
+          headers: authHeader(),
+        });
+      } else {
+        // STEP 1 - SAVE PART I (Basic Info)
+        const tsrResponse = await API.post("/tsr-initiation/create", submitPayload, {
+          headers: authHeader(),
+        });
+        tsrId = tsrResponse.data.data._id;
+      }
 
-      const tsrId = tsrResponse.data.data._id;
-      // STEP 2 - SAVE PART II (Documents List)
+      // STEP 2 - SAVE/UPDATE PART II (Documents List)
       await Promise.all(
-        documentList.map((doc) =>
-          API.post(
-            "/tsr-document-list",
-            {
-              tsrId,
-              ...doc,
-            },
-            {
+        documentList.map((doc) => {
+          if (doc._id) {
+            return API.put(`/tsr-document-list/${doc._id}`, doc, {
               headers: authHeader(),
-            },
-          ),
-        ),
+            });
+          } else {
+            return API.post(
+              "/tsr-document-list",
+              {
+                tsrId,
+                ...doc,
+              },
+              {
+                headers: authHeader(),
+              },
+            );
+          }
+        }),
       );
 
       // STEP 3 - SAVE PART III (Title Flow Excel, if uploaded)
@@ -605,23 +708,29 @@ export default function TSRInitiation() {
         });
       }
 
-      // STEP 4 - SAVE PART IV (Title Evidence)
+      // STEP 4 - SAVE/UPDATE PART IV (Title Evidence)
       await Promise.all(
-        titleEvidence.map((item) =>
-          API.post(
-            "/tsr-title-evidence",
-            {
-              tsrId,
-              ...item,
-            },
-            {
+        titleEvidence.map((item) => {
+          if (item._id) {
+            return API.put(`/tsr-title-evidence/${item._id}`, item, {
               headers: authHeader(),
-            },
-          ),
-        ),
+            });
+          } else {
+            return API.post(
+              "/tsr-title-evidence",
+              {
+                tsrId,
+                ...item,
+              },
+              {
+                headers: authHeader(),
+              },
+            );
+          }
+        }),
       );
 
-      // STEP 5 - SAVE PART V (Other Provisions)
+      // STEP 5 - SAVE PART V (Other Provisions - upsert handles it in backend)
       await API.post(
         "/tsr-other-provisions/create",
         {
@@ -631,7 +740,7 @@ export default function TSRInitiation() {
         { headers: authHeader() },
       );
 
-      // STEP 6 - SAVE PART VI (Waiting Report)
+      // STEP 6 - SAVE PART VI (Waiting Report - upsert handles it in backend)
       await API.post(
         "/tsr-waiting-report/create",
         {
@@ -641,7 +750,7 @@ export default function TSRInitiation() {
         { headers: authHeader() },
       );
 
-      alert("TSR Initiated Successfully");
+      alert(isEditing ? "TSR Updated Successfully" : "TSR Initiated Successfully");
 
       // Reset everything for a fresh entry
       setForm(INITIAL);
@@ -651,12 +760,14 @@ export default function TSRInitiation() {
       setTitleEvidence(INITIAL_TITLE_EVIDENCE);
       setTitleFlowFile(null);
       setTitleFlowData(null);
+      setIsEditing(false);
+      setEditingRecordId(null);
       setActiveTab("basic");
 
       fetchRecords();
     } catch (err) {
       console.error(err);
-      alert("Failed to save TSR");
+      alert(isEditing ? "Failed to update TSR" : "Failed to save TSR");
     } finally {
       setSubmitting(false);
     }
@@ -865,7 +976,39 @@ export default function TSRInitiation() {
               </button>
             )}
 
-            <div style={{ marginLeft: "auto" }}>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 12 }}>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm("Cancel editing this report? Any unsaved changes will be lost.")) {
+                      setIsEditing(false);
+                      setEditingRecordId(null);
+                      setForm(INITIAL);
+                      setDocumentList(INITIAL_DOCUMENT_LIST);
+                      setOtherProvisions(INITIAL_OTHER_PROVISIONS);
+                      setWaitingReport(INITIAL_WAITING_REPORT);
+                      setTitleEvidence(INITIAL_TITLE_EVIDENCE);
+                      setTitleFlowFile(null);
+                      setTitleFlowData(null);
+                      setActiveTab("basic");
+                    }
+                  }}
+                  style={{
+                    background: "white",
+                    color: "#dc2626",
+                    border: "1px solid #dc2626",
+                    padding: "12px 24px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel Edit
+                </button>
+              )}
+
               {activeTab === "basic" && (
                 <button
                   type="button"
@@ -979,8 +1122,8 @@ export default function TSRInitiation() {
                 >
                   {activeTab === "waitingReport"
                     ? submitting
-                      ? "Initiating..."
-                      : "Initiate TSR Report ✓"
+                      ? isEditing ? "Updating..." : "Initiating..."
+                      : isEditing ? "Update TSR Report ✓" : "Initiate TSR Report ✓"
                     : "Next Section ➔"}
                 </button>
               )}
@@ -1146,7 +1289,7 @@ export default function TSRInitiation() {
                           View
                         </button>
                         <button
-                          onClick={() => alert("Edit - Phase 2 feature")}
+                          onClick={() => handleEdit(r)}
                           style={{
                             background: "white",
                             border: "1px solid var(--border)",

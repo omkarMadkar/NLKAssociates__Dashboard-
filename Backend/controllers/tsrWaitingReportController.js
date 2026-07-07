@@ -5,19 +5,28 @@ const createWaitingReport = async (req, res) => {
   try {
     const { tsrInitiationId, chalanNo, date, reportSrNo, documents } = req.body;
 
-    const report = await TSRWaitingReport.create({
-      tsrInitiationId,
-      chalanNo,
-      date,
-      reportSrNo,
-      documents,
-    });
+    let report = await TSRWaitingReport.findOne({ tsrInitiationId });
+    if (report) {
+      report.chalanNo = chalanNo;
+      report.date = date;
+      report.reportSrNo = reportSrNo;
+      report.documents = documents;
+      await report.save();
+    } else {
+      report = await TSRWaitingReport.create({
+        tsrInitiationId,
+        chalanNo,
+        date,
+        reportSrNo,
+        documents,
+      });
+    }
 
     await TSRInitiation.findByIdAndUpdate(tsrInitiationId, {
       waitingReportId: report._id,
     });
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       data: report,
     });

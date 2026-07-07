@@ -6,16 +6,22 @@ exports.createOtherProvision = async (req, res) => {
   try {
     const { tsrInitiationId, answers } = req.body;
 
-    const provision = await TSROtherProvision.create({
-      tsrInitiationId,
-      answers,
-    });
+    let provision = await TSROtherProvision.findOne({ tsrInitiationId });
+    if (provision) {
+      provision.answers = answers;
+      await provision.save();
+    } else {
+      provision = await TSROtherProvision.create({
+        tsrInitiationId,
+        answers,
+      });
+    }
 
     await TSRInitiation.findByIdAndUpdate(tsrInitiationId, {
       otherProvisionId: provision._id,
     });
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       data: provision,
     });
