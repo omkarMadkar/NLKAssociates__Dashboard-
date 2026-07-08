@@ -19,6 +19,8 @@ export default function TSRDocumentsUpload({
   handleTitleFlowExcel,
   titleFlowData,
   handleDownloadTitleFlowTemplate,
+  description,
+  setDescription,
 }) {
   return (
     <div className="animate-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -141,6 +143,33 @@ export default function TSRDocumentsUpload({
                   <strong>{titleFlowData.length}</strong> title events loaded successfully
                 </div>
               )}
+            </div>
+
+            <div style={{ marginTop: 24, borderTop: "1px dashed var(--border)", paddingTop: 20, width: "100%", maxWidth: 600, marginLeft: "auto", marginRight: "auto", textAlign: "left" }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--black)", display: "block", marginBottom: 6 }}>
+                Description / Change Information
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Give any additional change information or title flow description here..."
+                style={{
+                  width: "100%",
+                  minHeight: 80,
+                  padding: "10px 14px",
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  fontSize: 13,
+                  color: "var(--black)",
+                  outline: "none",
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                  lineHeight: "1.4",
+                  transition: "all 0.2s ease"
+                }}
+                onFocus={(e) => e.target.style.borderColor = "var(--black)"}
+                onBlur={(e) => e.target.style.borderColor = "var(--border)"}
+              />
             </div>
           </div>
         )}

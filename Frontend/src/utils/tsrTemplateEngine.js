@@ -81,37 +81,49 @@ Hereinafter, referred to as the "Subject Property".`;
       : "No documents submitted.";
 
   //PART III : FLOW OF TITLE OF PROPERTY
-  const titleFlow =
-    data.titleFlow?.length > 0
-      ? data.titleFlow
-          .flatMap((flow) => flow.events || [])
-          .sort((a, b) => a.eventNo - b.eventNo)
-          .map((event, index) => {
-            const ownerText =
-              event.currentOwner === "YES"
-                ? ` Thus, ${event.toParty} became owner and in possession of the said property.`
-                : "";
+  const flowEvents = data.titleFlowId?.events || (data.titleFlow?.length > 0 ? data.titleFlow.flatMap((flow) => flow.events || []) : []);
+  let titleFlowText = "";
 
-            return `${index + 1}. Thereafter, ${
-              event.fromParty || "[Transferor]"
-            } has executed a ${event.documentType || "[Document Type]"} dated ${
-              event.documentDate || "[Date]"
-            }, thereby sold, transferred and conveyed ${
-              event.propertyDetails || "the property"
-            } to and in favour of ${event.toParty || "[Transferee]"}.
+  if (flowEvents.length > 0) {
+    titleFlowText = flowEvents
+      .sort((a, b) => a.eventNo - b.eventNo)
+      .map((event, index) => {
+        const ownerText =
+          event.currentOwner === "YES"
+            ? ` Thus, ${event.toParty} became owner and in possession of the said property.`
+            : "";
+
+        return `${index + 1}. Thereafter, ${
+          event.fromParty || "[Transferor]"
+        } has executed a ${event.documentType || "[Document Type]"} dated ${
+          event.documentDate || "[Date]"
+        }, thereby sold, transferred and conveyed ${
+          event.propertyDetails || "the property"
+        } to and in favour of ${event.toParty || "[Transferee]"}.
 
 The said ${
-              event.documentType || "document"
-            } is duly registered under Registration No. ${
-              event.registrationNo || "-"
-            } in the office of ${event.srOfficeName || "[SRO]"}.${ownerText}${
-              event.remarks && event.remarks !== "NA"
-                ? ` Remarks: ${event.remarks}`
-                : ""
-            }`;
-          })
-          .join("\n\n")
-      : "No title flow available.";
+          event.documentType || "document"
+        } is duly registered under Registration No. ${
+          event.registrationNo || "-"
+        } in the office of ${event.srOfficeName || "[SRO]"}.${ownerText}${
+          event.remarks && event.remarks !== "NA"
+            ? ` Remarks: ${event.remarks}`
+            : ""
+        }`;
+      })
+      .join("\n\n");
+  } else {
+    titleFlowText = "No title flow events available.";
+  }
+
+  const flowDoc = data.titleFlowId || (Array.isArray(data.titleFlow) ? data.titleFlow[0] : data.titleFlow);
+  const flowDesc = flowDoc?.description?.trim() || "";
+
+  const titleFlow = flowDesc
+    ? (titleFlowText && titleFlowText !== "No title flow events available."
+        ? `${titleFlowText}\n\nAdditional Description / Change Information:\n${flowDesc}`
+        : flowDesc)
+    : (titleFlowText || "No title flow available.");
 
   //PART IV : EVIDENCE OF THE TITLE OF PROPERTY
   const titleEvidence =

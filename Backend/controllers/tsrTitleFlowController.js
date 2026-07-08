@@ -33,12 +33,13 @@ const allowedEventTypes = [
 
 exports.createTitleFlow = async (req, res) => {
   try {
-    const { tsrInitiationId, events } = req.body;
+    const { tsrInitiationId, events, description } = req.body;
 
-    const titleFlow = await TSRTitleFlow.create({
-      tsrInitiationId,
-      events,
-    });
+    const titleFlow = await TSRTitleFlow.findOneAndUpdate(
+      { tsrInitiationId },
+      { events, description },
+      { new: true, upsert: true }
+    );
 
     await TSRInitiation.findByIdAndUpdate(tsrInitiationId, {
       titleFlowId: titleFlow._id,
@@ -177,10 +178,11 @@ exports.uploadAndSaveTitleFlow = async (req, res) => {
       };
     });
 
-    const titleFlow = await TSRTitleFlow.create({
-      tsrInitiationId,
-      events,
-    });
+    const titleFlow = await TSRTitleFlow.findOneAndUpdate(
+      { tsrInitiationId },
+      { events },
+      { new: true, upsert: true }
+    );
 
     await TSRInitiation.findByIdAndUpdate(tsrInitiationId, {
       titleFlowId: titleFlow._id,

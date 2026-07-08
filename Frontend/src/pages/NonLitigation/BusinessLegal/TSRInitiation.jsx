@@ -268,6 +268,7 @@ export default function TSRInitiation() {
   const [titleFlowFile, setTitleFlowFile] = useState(null);
   const [titleFlowUploading, setTitleFlowUploading] = useState(false);
   const [titleFlowData, setTitleFlowData] = useState(null);
+  const [titleFlowDescription, setTitleFlowDescription] = useState("");
 
   // Other provisions state
   const [waitingReport, setWaitingReport] = useState(INITIAL_WAITING_REPORT);
@@ -652,6 +653,14 @@ export default function TSRInitiation() {
       setWaitingReport(INITIAL_WAITING_REPORT);
     }
 
+    if (record.titleFlowId) {
+      setTitleFlowData(record.titleFlowId.events || null);
+      setTitleFlowDescription(record.titleFlowId.description || "");
+    } else {
+      setTitleFlowData(null);
+      setTitleFlowDescription("");
+    }
+
     // Set active tab to 'basic' to start editing
     setActiveTab("basic");
 
@@ -748,17 +757,37 @@ export default function TSRInitiation() {
         }),
       );
 
-      // STEP 3 - SAVE PART III (Title Flow Excel, if uploaded)
+      // STEP 3 - SAVE PART III (Title Flow Excel and/or Description)
       if (titleFlowFile) {
         const formData = new FormData();
         formData.append("file", titleFlowFile);
         formData.append("tsrInitiationId", tsrId);
 
-        await API.post("/tsr-title-flow/upload-and-save", formData, {
+        const uploadRes = await API.post("/tsr-title-flow/upload-and-save", formData, {
           headers: {
             ...authHeader(),
             "Content-Type": "multipart/form-data",
           },
+        });
+
+        // Save description if filled
+        if (titleFlowDescription?.trim()) {
+          await API.post("/tsr-title-flow/create", {
+            tsrInitiationId: tsrId,
+            events: uploadRes.data.data?.events || [],
+            description: titleFlowDescription
+          }, {
+            headers: authHeader()
+          });
+        }
+      } else {
+        // Save description and any parsed events without a new file upload
+        await API.post("/tsr-title-flow/create", {
+          tsrInitiationId: tsrId,
+          events: titleFlowData || [],
+          description: titleFlowDescription || ""
+        }, {
+          headers: authHeader()
         });
       }
 
@@ -823,6 +852,7 @@ export default function TSRInitiation() {
       setTitleEvidence(INITIAL_TITLE_EVIDENCE);
       setTitleFlowFile(null);
       setTitleFlowData(null);
+      setTitleFlowDescription("");
       setIsEditing(false);
       setEditingRecordId(null);
       setActiveTab("basic");
@@ -970,6 +1000,8 @@ export default function TSRInitiation() {
               handleTitleFlowExcel={handleTitleFlowExcel}
               titleFlowData={titleFlowData}
               handleDownloadTitleFlowTemplate={handleDownloadTitleFlowTemplate}
+              description={titleFlowDescription}
+              setDescription={setTitleFlowDescription}
             />
           )}
 
@@ -1054,6 +1086,7 @@ export default function TSRInitiation() {
                       setTitleEvidence(INITIAL_TITLE_EVIDENCE);
                       setTitleFlowFile(null);
                       setTitleFlowData(null);
+                      setTitleFlowDescription("");
                       setActiveTab("basic");
                     }
                   }}
