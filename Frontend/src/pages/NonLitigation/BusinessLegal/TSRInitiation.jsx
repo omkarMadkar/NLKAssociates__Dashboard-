@@ -8,6 +8,8 @@ import TSROtherProvisions from "../../../models/TSROtherProvision";
 import TSRWaitingReport from "../../../models/TSRWaitingReport";
 import TSRDocumentList from "../../../models/TSRDocumentList";
 import TSRTitleEvidence from "../../../models/TSRTitleEvidence";
+import TSRUploadedChecklist from "../../../models/TSRUploadedChecklist";
+
 
 const INITIAL = {
   author: "Narayan",
@@ -44,6 +46,13 @@ const INITIAL = {
   executiveMobile: "",
   executiveEmail: "",
   uploadedDocuments: [],
+  uploadedChecklist: [
+    { name: "", fileName: "", filePath: "", remarks: "" },
+    { name: "", fileName: "", filePath: "", remarks: "" },
+    { name: "", fileName: "", filePath: "", remarks: "" },
+    { name: "", fileName: "", filePath: "", remarks: "" },
+    { name: "", fileName: "", filePath: "", remarks: "" },
+  ],
 };
 
 const INITIAL_DOCUMENT_LIST = [
@@ -249,11 +258,20 @@ export default function TSRInitiation() {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState("basic");
+  const [activeRecordsTab, setActiveRecordsTab] = useState("records");
   const [viewingRecord, setViewingRecord] = useState(null);
   const [viewingDocs, setViewingDocs] = useState([]);
   const [viewingEvidence, setViewingEvidence] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState(null);
+
+  // ---- Toast notification ----
+  const [toast, setToast] = useState(null); // { message, type: 'success' | 'error' }
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
 
   const [documentList, setDocumentList] = useState(INITIAL_DOCUMENT_LIST);
   const [titleEvidence, setTitleEvidence] = useState(INITIAL_TITLE_EVIDENCE);
@@ -329,6 +347,37 @@ export default function TSRInitiation() {
       alert(error.response?.data?.message || "File Upload Failed");
     }
   };
+
+  const [selectedRecordForDocs, setSelectedRecordForDocs] = useState(null);
+
+  const handleUploadedChecklistFileUpload = async (index, file) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const response = await API.post("/tsr-waiting-report/upload", formData, {
+        headers: {
+          ...authHeader(),
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      if (response.data.success) {
+        setForm((prev) => {
+          const updated = [...(prev.uploadedChecklist || [])];
+          updated[index] = {
+            ...updated[index],
+            fileName: response.data.fileName,
+            filePath: response.data.filePath,
+          };
+          return { ...prev, uploadedChecklist: updated };
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.message || "File Upload Failed");
+    }
+  };
+
   const [previewFile, setPreviewFile] = useState(null);
 
   const handleViewFile = (filePath, originalName = "") => {
@@ -370,6 +419,10 @@ export default function TSRInitiation() {
       });
       if (data.success) {
         setRecords(data.data);
+        if (selectedRecordForDocs) {
+          const updated = data.data.find((r) => r._id === selectedRecordForDocs._id);
+          setSelectedRecordForDocs(updated || null);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch TSR Initiations", err);
@@ -506,6 +559,71 @@ export default function TSRInitiation() {
     if (!form.applicant.trim()) e.applicant = "Required";
     if (!form.initiationDate) e.initiationDate = "Required";
     if (!form.taluka.trim()) e.taluka = "Required";
+
+    // Validate Document List (Part II)
+    let docErrors = [];
+    documentList.forEach((doc, idx) => {
+      const isBlank = (
+        !doc.documentType?.trim() &&
+        !doc.executionDate &&
+        !doc.executedBy?.trim() &&
+        !doc.executedInFavourOf?.trim() &&
+        !doc.registrationOffice?.trim() &&
+        !doc.registrationNumber?.trim() &&
+        !doc.remarks?.trim()
+      );
+      if (!isBlank) {
+        // If not blank, all required fields must be present
+        const missing = [];
+        if (!doc.documentType?.trim()) missing.push("Document Type");
+        if (!doc.executionDate) missing.push("Execution Date");
+        if (!doc.executedBy?.trim()) missing.push("Executed By");
+        if (!doc.executedInFavourOf?.trim()) missing.push("Executed in favour of");
+        if (!doc.registrationOffice?.trim()) missing.push("Registration Office");
+        if (!doc.registrationNumber?.trim()) missing.push("Registration Number");
+        
+        if (missing.length > 0) {
+          docErrors.push(`Row ${idx + 1} is missing: ${missing.join(", ")}`);
+        }
+      }
+    });
+
+    // Validate Title Evidence (Part IV)
+    let evidenceErrors = [];
+    titleEvidence.forEach((item, idx) => {
+      const isBlank = (
+        !item.documentType?.trim() &&
+        !item.executionDate &&
+        !item.executedBy?.trim() &&
+        !item.executedInFavourOf?.trim() &&
+        !item.registrationOffice?.trim() &&
+        !item.registrationNumber?.trim() &&
+        !item.remarks?.trim()
+      );
+      if (!isBlank) {
+        const missing = [];
+        if (!item.documentType?.trim()) missing.push("Document Type");
+        if (!item.executionDate) missing.push("Execution Date");
+        if (!item.executedBy?.trim()) missing.push("Executed By");
+        if (!item.executedInFavourOf?.trim()) missing.push("Executed in favour of");
+        if (!item.registrationOffice?.trim()) missing.push("Registration Office");
+        if (!item.registrationNumber?.trim()) missing.push("Registration Number");
+        
+        if (missing.length > 0) {
+          evidenceErrors.push(`Row ${idx + 1} is missing: ${missing.join(", ")}`);
+        }
+      }
+    });
+
+    if (docErrors.length > 0) {
+      e.documentList = "Please complete all required fields for documents in Part II";
+      alert(`Part II (Documents List) Validation Error:\n` + docErrors.join("\n"));
+    }
+    if (evidenceErrors.length > 0) {
+      e.titleEvidence = "Please complete all required fields for title evidence in Part IV";
+      alert(`Part IV (Title Evidence) Validation Error:\n` + evidenceErrors.join("\n"));
+    }
+
     setErrors(e);
     return !Object.keys(e).length;
   };
@@ -607,6 +725,13 @@ export default function TSRInitiation() {
       boundaryNorth: record.boundaryNorth || "",
       executiveMobile: record.executiveMobile || "",
       executiveEmail: record.executiveEmail || "",
+      uploadedChecklist: record.uploadedChecklist?.length > 0 ? record.uploadedChecklist : [
+        { name: "", fileName: "", filePath: "", remarks: "" },
+        { name: "", fileName: "", filePath: "", remarks: "" },
+        { name: "", fileName: "", filePath: "", remarks: "" },
+        { name: "", fileName: "", filePath: "", remarks: "" },
+        { name: "", fileName: "", filePath: "", remarks: "" },
+      ],
     });
 
     // Fetch document list and title evidence checklist if they exist
@@ -668,7 +793,101 @@ export default function TSRInitiation() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ---------- SUBMIT (saves all 3 parts) ----------
+  // ---------- SAVE UPLOADED DOCS (Section 1.5 - independent, standalone) ----------
+  const handleSaveUploadedDocs = async () => {
+    // 1. Validate Basic Info fields (App ID, Applicant Name, Initiation Date, Taluka)
+    const e = {};
+    if (!form.appId?.trim()) e.appId = "Required";
+    if (!form.applicant?.trim()) e.applicant = "Required";
+    if (!form.initiationDate) e.initiationDate = "Required";
+    if (!form.taluka?.trim()) e.taluka = "Required";
+
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      setActiveTab("basic");
+      showToast("Please fill in App ID, Applicant Name, Initiation Date and Taluka first.", "error");
+      return;
+    }
+
+    // 2. Filter out completely blank rows in Section 1.5
+    const cleanedDocs = (form.uploadedChecklist || []).filter(
+      (doc) => doc.name?.trim() || doc.fileName?.trim() || doc.remarks?.trim()
+    );
+
+    if (cleanedDocs.length === 0) {
+      showToast("Please add at least one document in Section 1.5 before saving.", "error");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Filter out completely empty land parcels to avoid passing empty items to backend
+      const cleanedLandParcels = (form.landParcels || []).filter(
+        (p) =>
+          p.surveyNo?.trim() ||
+          p.hissaNo?.trim() ||
+          p.area?.trim() ||
+          p.unit?.trim() ||
+          p.remarks?.trim()
+      );
+
+      const submitPayload = {
+        ...form,
+        landParcels: cleanedLandParcels,
+        uploadedChecklist: cleanedDocs,
+      };
+
+      delete submitPayload._id;
+      delete submitPayload.createdAt;
+      delete submitPayload.updatedAt;
+      delete submitPayload.__v;
+
+      let tsrId = editingRecordId;
+
+      if (editingRecordId) {
+        // UPDATE existing record with Basic Info and Uploaded Documents Checklist
+        await API.put(`/tsr-initiation/${editingRecordId}`, submitPayload, {
+          headers: authHeader(),
+        });
+      } else {
+        // CREATE new record with Basic Info and Uploaded Documents Checklist
+        const tsrResponse = await API.post("/tsr-initiation/create", submitPayload, {
+          headers: authHeader(),
+        });
+        tsrId = tsrResponse.data.data._id;
+      }
+
+      // ✅ Set editing state immediately
+      setIsEditing(true);
+      setEditingRecordId(tsrId);
+
+      // Refresh records list — silently, without alerting on 404
+      try {
+        const recordsRes = await API.get("/tsr-initiation", { headers: authHeader() });
+        const updatedRecords = recordsRes.data.data || [];
+        setRecords(updatedRecords);
+
+        // Find the updated record and auto-expand it in the Uploaded Section
+        const updatedRecord = updatedRecords.find((r) => r._id === tsrId);
+        if (updatedRecord) {
+          setSelectedRecordForDocs(updatedRecord);
+          setActiveRecordsTab("uploaded");
+        }
+      } catch (refreshErr) {
+        // Silently ignore refresh errors — the save itself succeeded
+        console.warn("Could not refresh records list after save:", refreshErr.message);
+      }
+
+      showToast("✅ Documents saved successfully!", "success");
+    } catch (err) {
+      console.error(err);
+      showToast(err.response?.data?.message || err.message || "Failed to save documents.", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ---------- SUBMIT (saves all sections except 1.5) ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -687,9 +906,15 @@ export default function TSRInitiation() {
           p.remarks?.trim()
       );
 
+      // Filter out completely empty checklist items
+      const cleanedUploadedChecklist = (form.uploadedChecklist || []).filter(
+        (doc) => doc.name?.trim() || doc.fileName?.trim() || doc.remarks?.trim()
+      );
+
       const submitPayload = {
         ...form,
         landParcels: cleanedLandParcels,
+        uploadedChecklist: cleanedUploadedChecklist,
         otherProvisionId: form.otherProvisionId?._id || form.otherProvisionId || null,
         waitingReportId: form.waitingReportId?._id || form.waitingReportId || null,
         titleFlowId: form.titleFlowId?._id || form.titleFlowId || null,
@@ -844,23 +1069,76 @@ export default function TSRInitiation() {
 
       alert(isEditing ? "TSR Updated Successfully" : "TSR Initiated Successfully");
 
-      // Reset everything for a fresh entry
-      setForm(INITIAL);
-      setDocumentList(INITIAL_DOCUMENT_LIST);
-      setOtherProvisions(INITIAL_OTHER_PROVISIONS);
-      setWaitingReport(INITIAL_WAITING_REPORT);
-      setTitleEvidence(INITIAL_TITLE_EVIDENCE);
-      setTitleFlowFile(null);
-      setTitleFlowData(null);
-      setTitleFlowDescription("");
-      setIsEditing(false);
-      setEditingRecordId(null);
-      setActiveTab("basic");
+      // ✅ IMMEDIATELY set editing state so Section 1.5 Save Progress works right away
+      // This must happen before any subsequent GET calls that might fail
+      setIsEditing(true);
+      setEditingRecordId(tsrId);
 
-      fetchRecords();
+      // Refresh the records list
+      try {
+        const recordsRes = await API.get("/tsr-initiation", { headers: authHeader() });
+        const updatedRecords = recordsRes.data.data || [];
+        setRecords(updatedRecords);
+
+        // Find the saved record from the list to update the Uploaded Section
+        const savedFromList = updatedRecords.find((r) => r._id === tsrId);
+        if (savedFromList) {
+          setSelectedRecordForDocs(savedFromList);
+        }
+      } catch (_) { /* ignore list refresh errors */ }
+
+      // Optionally fetch the fully populated record to refresh child state
+      try {
+        const recordRes = await API.get(`/tsr-initiation/${tsrId}`, { headers: authHeader() });
+        const savedRecord = recordRes.data.data;
+
+        if (savedRecord) {
+          setSelectedRecordForDocs(savedRecord);
+          setForm({
+            ...savedRecord,
+            uploadedChecklist: savedRecord.uploadedChecklist?.length > 0 ? savedRecord.uploadedChecklist : [
+              { name: "", fileName: "", filePath: "", remarks: "" },
+              { name: "", fileName: "", filePath: "", remarks: "" },
+              { name: "", fileName: "", filePath: "", remarks: "" },
+              { name: "", fileName: "", filePath: "", remarks: "" },
+              { name: "", fileName: "", filePath: "", remarks: "" },
+            ],
+          });
+        }
+      } catch (_) { /* ignore if GET by ID fails */ }
+
+      // Refresh child lists to get their database _ids
+      try {
+        const docRes = await API.get(`/tsr-document-list/${tsrId}`, { headers: authHeader() });
+        if (docRes.data?.data?.length > 0) setDocumentList(docRes.data.data);
+      } catch (_) { /* not yet created – ignore */ }
+
+      try {
+        const tfRes = await API.get(`/tsr-title-flow/${tsrId}`, { headers: authHeader() });
+        if (tfRes.data?.data) {
+          setTitleFlowData(tfRes.data.data.events || []);
+          setTitleFlowDescription(tfRes.data.data.description || "");
+        }
+      } catch (_) { /* not yet created – ignore */ }
+
+      try {
+        const evRes = await API.get(`/tsr-title-evidence/${tsrId}`, { headers: authHeader() });
+        if (evRes.data?.data?.length > 0) setTitleEvidence(evRes.data.data);
+      } catch (_) { /* not yet created – ignore */ }
+
+      try {
+        const opRes = await API.get(`/tsr-other-provisions/${tsrId}`, { headers: authHeader() });
+        if (opRes.data?.data) setOtherProvisions(opRes.data.data.answers || INITIAL_OTHER_PROVISIONS);
+      } catch (_) { /* not yet created – ignore */ }
+
+      try {
+        const wrRes = await API.get(`/tsr-waiting-report/${tsrId}`, { headers: authHeader() });
+        if (wrRes.data?.data) setWaitingReport(wrRes.data.data);
+      } catch (_) { /* not yet created – ignore */ }
+
     } catch (err) {
       console.error(err);
-      alert(isEditing ? "Failed to update TSR" : "Failed to save TSR");
+      alert(err.response?.data?.message || err.message || (isEditing ? "Failed to update TSR" : "Failed to save TSR"));
     } finally {
       setSubmitting(false);
     }
@@ -881,6 +1159,52 @@ export default function TSRInitiation() {
       className="animate-in"
       style={{ display: "flex", flexDirection: "column", gap: 28 }}
     >
+      {/* ---- Toast Notification ---- */}
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            top: 24,
+            right: 28,
+            zIndex: 99999,
+            background: toast.type === "success" ? "#000000" : "#dc2626",
+            color: "white",
+            padding: "14px 22px",
+            borderRadius: 10,
+            fontSize: 14,
+            fontWeight: 600,
+            fontFamily: "DM Sans, sans-serif",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.25)",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            maxWidth: 380,
+            animation: "fadeSlideUp 0.3s ease forwards",
+            borderLeft: toast.type === "success" ? "4px solid #c9a84c" : "4px solid #fca5a5",
+          }}
+        >
+          <span style={{ fontSize: 18 }}>
+            {toast.type === "success" ? "✅" : "❌"}
+          </span>
+          <span>{toast.message}</span>
+          <button
+            onClick={() => setToast(null)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "rgba(255,255,255,0.7)",
+              cursor: "pointer",
+              fontSize: 16,
+              marginLeft: "auto",
+              padding: "0 0 0 8px",
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Page Header */}
       <div
         style={{
@@ -941,6 +1265,7 @@ export default function TSRInitiation() {
         >
           {[
             { key: "basic", label: "I. Basic Info" },
+            { key: "uploadedChecklist", label: "1.5 Document Uploaded" },
             { key: "documentsUpload", label: "II. Documents List" },
             { key: "documents", label: "III. Title Flow" },
             { key: "titleEvidence", label: "IV. Title Evidence" },
@@ -979,6 +1304,15 @@ export default function TSRInitiation() {
               addParcel={addParcel}
               removeParcel={removeParcel}
               handleParcelChange={handleParcelChange}
+            />
+          )}
+
+          {activeTab === "uploadedChecklist" && (
+            <TSRUploadedChecklist
+              documents={form.uploadedChecklist || []}
+              setDocuments={(docs) => setForm({ ...form, uploadedChecklist: docs })}
+              handleFileUpload={handleUploadedChecklistFileUpload}
+              handleViewFile={handleViewFile}
             />
           )}
 
@@ -1044,14 +1378,16 @@ export default function TSRInitiation() {
               <button
                 type="button"
                 onClick={() => {
-                  if (activeTab === "documentsUpload") {
+                  if (activeTab === "uploadedChecklist") {
                     setActiveTab("basic");
+                  } else if (activeTab === "documentsUpload") {
+                    setActiveTab("uploadedChecklist");
                   } else if (activeTab === "documents") {
                     setActiveTab("documentsUpload");
                   } else if (activeTab === "titleEvidence") {
                     setActiveTab("documents");
                   } else if (activeTab === "otherProvisions") {
-                    setActiveTab("documents");
+                    setActiveTab("titleEvidence");
                   } else if (activeTab === "waitingReport") {
                     setActiveTab("otherProvisions");
                   }
@@ -1105,7 +1441,88 @@ export default function TSRInitiation() {
                 </button>
               )}
 
+              {activeTab === "documentsUpload" && (
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  style={{
+                    background: "white",
+                    color: "#059669",
+                    border: "1px solid #a7f3d0",
+                    padding: "12px 24px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: submitting ? "not-allowed" : "pointer",
+                    marginRight: 8,
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!submitting) {
+                      e.currentTarget.style.background = "#ecfdf5";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!submitting) {
+                      e.currentTarget.style.background = "white";
+                    }
+                  }}
+                >
+                  {submitting ? "Saving..." : "Save Progress"}
+                </button>
+              )}
+
+              {activeTab === "uploadedChecklist" && (
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={handleSaveUploadedDocs}
+                  style={{
+                    background: "white",
+                    color: "#059669",
+                    border: "1px solid #a7f3d0",
+                    padding: "12px 24px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: submitting ? "not-allowed" : "pointer",
+                    marginRight: 8,
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!submitting) e.currentTarget.style.background = "#ecfdf5";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!submitting) e.currentTarget.style.background = "white";
+                  }}
+                >
+                  {submitting ? "Saving..." : "Save Progress"}
+                </button>
+              )}
+
               {activeTab === "basic" && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveTab("uploadedChecklist");
+                  }}
+                  style={{
+                    background: "white",
+                    color: "var(--black)",
+                    border: "1px solid var(--black)",
+                    padding: "12px 36px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  Next Section
+                </button>
+              )}
+
+              {activeTab === "uploadedChecklist" && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1228,7 +1645,7 @@ export default function TSRInitiation() {
         </form>
       </div>
 
-      {/* Records Table */}
+      {/* Records Table Card with Tabs */}
       <div
         style={{
           background: "white",
@@ -1237,25 +1654,72 @@ export default function TSRInitiation() {
           overflow: "hidden",
         }}
       >
+        {/* Tab Headers */}
         <div
           style={{
             padding: "18px 28px",
             borderBottom: "1px solid var(--border)",
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
+            gap: 32,
           }}
         >
           <h2
+            onClick={() => setActiveRecordsTab("records")}
             style={{
               fontSize: 18,
-              color: "var(--black)",
+              color: activeRecordsTab === "records" ? "var(--navy)" : "#94a3b8",
               margin: 0,
               fontWeight: 700,
+              cursor: "pointer",
+              position: "relative",
+              paddingBottom: 6,
             }}
           >
             TSR Initiation Records
+            {activeRecordsTab === "records" && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  width: "100%",
+                  height: 3,
+                  background: "var(--navy)",
+                  borderRadius: 2,
+                }}
+              />
+            )}
           </h2>
+
+          <h2
+            onClick={() => setActiveRecordsTab("uploaded")}
+            style={{
+              fontSize: 18,
+              color: activeRecordsTab === "uploaded" ? "var(--navy)" : "#94a3b8",
+              margin: 0,
+              fontWeight: 700,
+              cursor: "pointer",
+              position: "relative",
+              paddingBottom: 6,
+            }}
+          >
+            Uploaded Section
+            {activeRecordsTab === "uploaded" && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  width: "100%",
+                  height: 3,
+                  background: "var(--navy)",
+                  borderRadius: 2,
+                }}
+              />
+            )}
+          </h2>
+
           <span
             style={{
               background: "#f3f4f6",
@@ -1264,163 +1728,352 @@ export default function TSRInitiation() {
               borderRadius: 12,
               fontSize: 13,
               fontWeight: 600,
+              marginLeft: "auto",
             }}
           >
-            {records.length} records
+            {activeRecordsTab === "records"
+              ? `${records.filter(r => r.waitingReportId).length} records`
+              : `${records.filter(r => r.uploadedChecklist?.length > 0).length} with documents`}
           </span>
         </div>
 
-        {records.length === 0 ? (
-          <div style={{ padding: 48, textAlign: "center" }}>
-            <div style={{ fontSize: 16, color: "var(--muted)" }}>
-              No records yet
+        {activeRecordsTab === "records" ? (
+          records.filter(r => r.waitingReportId).length === 0 ? (
+            <div style={{ padding: 48, textAlign: "center" }}>
+              <div style={{ fontSize: 16, color: "var(--muted)" }}>
+                No records yet
+              </div>
             </div>
-          </div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: 13,
-              }}
-            >
-              <thead>
-                <tr style={{ background: "#fafafa" }}>
-                  {[
-                    "ID",
-                    "App ID",
-                    "Applicant",
-                    "Branch",
-                    "Initiation Date",
-                    "Status",
-                    "Actions",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      style={{
-                        padding: "12px 16px",
-                        textAlign: "left",
-                        fontWeight: 700,
-                        color: "var(--muted)",
-                        textTransform: "uppercase",
-                        fontSize: 11,
-                        letterSpacing: 0.8,
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {records.map((r, i) => (
-                  <tr
-                    key={r._id}
-                    style={{
-                      borderTop: "1px solid var(--border)",
-                      animation: `fadeSlideUp 0.3s ease forwards`,
-                      animationDelay: `${i * 0.04}s`,
-                      opacity: 0,
-                    }}
-                  >
-                    <td
-                      style={{
-                        padding: "14px 16px",
-                        fontFamily: "monospace",
-                        fontWeight: 700,
-                        color: "var(--black)",
-                        fontSize: 12,
-                      }}
-                    >
-                      INIT-{String(i + 1).padStart(3, "0")}
-                    </td>
-                    <td
-                      style={{
-                        padding: "14px 16px",
-                        fontFamily: "monospace",
-                        fontSize: 12,
-                      }}
-                    >
-                      {r.appId}
-                    </td>
-                    <td style={{ padding: "14px 16px", fontWeight: 600 }}>
-                      {r.applicant}
-                      {r.coApplicant && (
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "var(--muted)",
-                            marginTop: 2,
-                          }}
-                        >
-                          + {r.coApplicant}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: "14px 16px", color: "var(--muted)" }}>
-                      {r.branch}
-                    </td>
-                    <td style={{ padding: "14px 16px", color: "var(--muted)" }}>
-                      {r.initiationDate}
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <StatusBadge status={r.status} />
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button
-                          onClick={() => handleViewDetails(r)}
-                          style={{
-                            background: "white",
-                            border: "1px solid var(--border)",
-                            padding: "6px 12px",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                            fontSize: 12,
-                            fontWeight: 600,
-                          }}
-                          title="View Details"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={() => handleEdit(r)}
-                          style={{
-                            background: "white",
-                            border: "1px solid var(--border)",
-                            padding: "6px 12px",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                            fontSize: 12,
-                            fontWeight: 600,
-                          }}
-                          title="Edit"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(r._id)}
-                          style={{
-                            background: "var(--black)",
-                            color: "white",
-                            border: "1px solid var(--black)",
-                            padding: "6px 12px",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                            fontSize: 12,
-                            fontWeight: 600,
-                          }}
-                          title="Delete"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: 13,
+                }}
+              >
+                <thead>
+                  <tr style={{ background: "#fafafa" }}>
+                    {[
+                      "ID",
+                      "App ID",
+                      "Applicant",
+                      "Branch",
+                      "Initiation Date",
+                      "Status",
+                      "Actions",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: "12px 16px",
+                          textAlign: "left",
+                          fontWeight: 700,
+                          color: "var(--muted)",
+                          textTransform: "uppercase",
+                          fontSize: 11,
+                          letterSpacing: 0.8,
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {records.filter(r => r.waitingReportId).map((r, i) => (
+                    <tr
+                      key={r._id}
+                      onClick={() => setSelectedRecordForDocs(r)}
+                      style={{
+                        borderTop: "1px solid var(--border)",
+                        animation: `fadeSlideUp 0.3s ease forwards`,
+                        animationDelay: `${i * 0.04}s`,
+                        opacity: 0,
+                        cursor: "pointer",
+                        background:
+                          selectedRecordForDocs?._id === r._id
+                            ? "#f1f5f9"
+                            : "transparent",
+                      }}
+                    >
+                      <td
+                        style={{
+                          padding: "14px 16px",
+                          fontFamily: "monospace",
+                          fontWeight: 700,
+                          color: "var(--black)",
+                          fontSize: 12,
+                        }}
+                      >
+                        INIT-{String(i + 1).padStart(3, "0")}
+                      </td>
+                      <td
+                        style={{
+                          padding: "14px 16px",
+                          fontFamily: "monospace",
+                          fontSize: 12,
+                        }}
+                      >
+                        {r.appId}
+                      </td>
+                      <td style={{ padding: "14px 16px", fontWeight: 600 }}>
+                        {r.applicant}
+                        {r.coApplicant && (
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "var(--muted)",
+                              marginTop: 2,
+                            }}
+                          >
+                            + {r.coApplicant}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: "14px 16px", color: "var(--muted)" }}>
+                        {r.branch}
+                      </td>
+                      <td style={{ padding: "14px 16px", color: "var(--muted)" }}>
+                        {r.initiationDate}
+                      </td>
+                      <td style={{ padding: "14px 16px" }}>
+                        <StatusBadge status={r.status} />
+                      </td>
+                      <td style={{ padding: "14px 16px" }}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewDetails(r);
+                            }}
+                            style={{
+                              background: "white",
+                              border: "1px solid var(--border)",
+                              padding: "6px 12px",
+                              borderRadius: 6,
+                              cursor: "pointer",
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                            title="View Details"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(r);
+                            }}
+                            style={{
+                              background: "white",
+                              border: "1px solid var(--border)",
+                              padding: "6px 12px",
+                              borderRadius: 6,
+                              cursor: "pointer",
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                            title="Edit"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(r._id);
+                            }}
+                            style={{
+                              background: "var(--black)",
+                              color: "white",
+                              border: "1px solid var(--black)",
+                              padding: "6px 12px",
+                              borderRadius: 6,
+                              cursor: "pointer",
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                            title="Delete"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : (
+          /* Uploaded Section Tab Content */
+          <div style={{ padding: "20px 28px", minHeight: 250 }}>
+            {(() => {
+              // Filter all records that have at least one uploaded document
+              const recordsWithDocs = records.filter(
+                (r) => r.uploadedChecklist && r.uploadedChecklist.length > 0
+              );
+
+              if (recordsWithDocs.length === 0) {
+                return (
+                  <div style={{ textAlign: "center", padding: "48px 0", color: "var(--muted)", fontSize: 14 }}>
+                    No documents uploaded yet. Go to <strong>1.5 Document Uploaded</strong> tab in the form above, upload documents, then click <strong>Save Progress</strong>.
+                  </div>
+                );
+              }
+
+              return (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "var(--black)", color: "white" }}>
+                      <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, width: 90 }}>ID</th>
+                      <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, width: 150 }}>App ID</th>
+                      <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600 }}>Applicant</th>
+                      <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 600, width: 110 }}>Docs</th>
+                      <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 600, width: 110 }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recordsWithDocs.map((record, rIdx) => (
+                      <>
+                        {/* Summary row */}
+                        <tr
+                          key={`row-${record._id}`}
+                          style={{
+                            borderBottom: "1px solid #e2e8f0",
+                            background: selectedRecordForDocs?._id === record._id ? "#f5f5f5" : rIdx % 2 === 0 ? "#ffffff" : "#f9fafb",
+                            cursor: "pointer",
+                            transition: "background 0.15s",
+                          }}
+                          onClick={() =>
+                            setSelectedRecordForDocs(
+                              selectedRecordForDocs?._id === record._id ? null : record
+                            )
+                          }
+                        >
+                          <td style={{ padding: "12px 14px", fontWeight: 700, color: "var(--navy)", fontSize: 12 }}>
+                            INIT-{String(rIdx + 1).padStart(3, "0")}
+                          </td>
+                          <td style={{ padding: "12px 14px", color: "#374151", fontSize: 12 }}>
+                            {record.appId || "—"}
+                          </td>
+                          <td style={{ padding: "12px 14px" }}>
+                            <div style={{ fontWeight: 600, color: "var(--black)", fontSize: 13 }}>
+                              {record.applicant || "—"}
+                            </div>
+                            {record.coApplicant && (
+                              <div style={{ fontSize: 11, color: "#64748b" }}>
+                                + {record.coApplicant}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                            <span style={{
+                              background: "#f1f1f1",
+                              color: "var(--black)",
+                              borderRadius: 12,
+                              padding: "2px 10px",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              border: "1px solid #d1d5db",
+                            }}>
+                              {record.uploadedChecklist.length} file{record.uploadedChecklist.length !== 1 ? "s" : ""}
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedRecordForDocs(
+                                  selectedRecordForDocs?._id === record._id ? null : record
+                                );
+                              }}
+                              style={{
+                                background: selectedRecordForDocs?._id === record._id ? "var(--black)" : "white",
+                                color: selectedRecordForDocs?._id === record._id ? "white" : "var(--black)",
+                                border: "1px solid var(--black)",
+                                padding: "5px 14px",
+                                borderRadius: 6,
+                                cursor: "pointer",
+                                fontSize: 12,
+                                fontWeight: 600,
+                              }}
+                            >
+                              {selectedRecordForDocs?._id === record._id ? "▲ Hide" : "▼ View"}
+                            </button>
+                          </td>
+                        </tr>
+
+                        {/* Expanded documents row */}
+                        {selectedRecordForDocs?._id === record._id && (
+                          <tr key={`docs-${record._id}`}>
+                            <td colSpan={5} style={{ padding: "0 14px 14px 14px", background: "#f7f7f7", borderTop: "1px solid #e2e8f0" }}>
+                              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, marginTop: 10, border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+                                <thead>
+                                  <tr style={{ background: "var(--black)", color: "white" }}>
+                                    <th style={{ padding: "8px 12px", textAlign: "left", width: 40 }}>Sr.</th>
+                                    <th style={{ padding: "8px 12px", textAlign: "left" }}>Document Name</th>
+                                    <th style={{ padding: "8px 12px", textAlign: "left" }}>File Name</th>
+                                    <th style={{ padding: "8px 12px", textAlign: "left" }}>Remarks</th>
+                                    <th style={{ padding: "8px 12px", textAlign: "center", width: 90 }}>Action</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {record.uploadedChecklist.map((doc, dIdx) => (
+                                    <tr
+                                      key={dIdx}
+                                      style={{
+                                        borderTop: "1px solid #e2e8f0",
+                                        background: dIdx % 2 === 0 ? "white" : "#f9fafb",
+                                      }}
+                                    >
+                                      <td style={{ padding: "8px 12px", color: "#64748b" }}>{dIdx + 1}</td>
+                                      <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--navy)" }}>
+                                        {doc.name || "—"}
+                                      </td>
+                                      <td style={{ padding: "8px 12px", color: "var(--muted)" }}>
+                                        {doc.fileName ? `📎 ${doc.fileName}` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>No file</span>}
+                                      </td>
+                                      <td style={{ padding: "8px 12px", color: "#64748b" }}>
+                                        {doc.remarks || "—"}
+                                      </td>
+                                      <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                                        {doc.filePath ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleViewFile(doc.filePath)}
+                                            style={{
+                                              background: "transparent",
+                                              color: "var(--black)",
+                                              border: "1.5px solid var(--black)",
+                                              padding: "4px 10px",
+                                              borderRadius: 5,
+                                              cursor: "pointer",
+                                              fontSize: 11,
+                                              fontWeight: 600,
+                                            }}
+                                          >
+                                            👁 View
+                                          </button>
+                                        ) : (
+                                          <span style={{ color: "#cbd5e1" }}>—</span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    ))}
+                  </tbody>
+                </table>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -1772,9 +2425,9 @@ export default function TSRInitiation() {
                                 handleViewFile(doc.filePath, doc.originalName)
                               }
                               style={{
-                                background: "#eff6ff",
-                                color: "#1d4ed8",
-                                border: "1px solid #bfdbfe",
+                                background: "transparent",
+                                color: "var(--black)",
+                                border: "1.5px solid var(--black)",
                                 padding: "4px 8px",
                                 borderRadius: 4,
                                 cursor: "pointer",
@@ -1789,7 +2442,72 @@ export default function TSRInitiation() {
                       </div>
                     </div>
                   )}
+                  {/* Land Parcels sub-section */}
+                  {viewingRecord.landParcels?.length > 0 && (
+                    <div
+                      style={{
+                        background: "#f8fafc",
+                        padding: 16,
+                        borderRadius: 8,
+                        border: "1px solid #e2e8f0",
+                        marginTop: 16,
+                      }}
+                    >
+                      <h4
+                        style={{
+                          margin: "0 0 12px 0",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: "#475569",
+                          textTransform: "uppercase",
+                          letterSpacing: 0.5,
+                        }}
+                      >
+                        Land Parcels
+                      </h4>
+                      <table
+                        style={{
+                          width: "100%",
+                          borderCollapse: "collapse",
+                          fontSize: 12,
+                          border: "1px solid #e2e8f0",
+                          borderRadius: 8,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <thead>
+                          <tr style={{ background: "#ffffff" }}>
+                            <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Survey No.</th>
+                            <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Hissa No.</th>
+                            <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Area</th>
+                            <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Unit</th>
+                            <th style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>Remarks</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {viewingRecord.landParcels.map((p, idx) => (
+                            <tr
+                              key={idx}
+                              style={{
+                                borderBottom: idx < viewingRecord.landParcels.length - 1 ? "1px solid #f1f5f9" : "none",
+                                background: "#ffffff",
+                              }}
+                            >
+                              <td style={{ padding: "8px 12px" }}>{p.surveyNo || "—"}</td>
+                              <td style={{ padding: "8px 12px" }}>{p.hissaNo || "—"}</td>
+                              <td style={{ padding: "8px 12px" }}>{p.area || "—"}</td>
+                              <td style={{ padding: "8px 12px" }}>{p.unit || "—"}</td>
+                              <td style={{ padding: "8px 12px" }}>{p.remarks || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
+
+
+
 
                 {/* Section 2: Documents List */}
                 {viewingDocs?.length > 0 && (
@@ -1845,112 +2563,126 @@ export default function TSRInitiation() {
                   </div>
                 )}
 
-                {/* Section 3: Land Parcels */}
-                {viewingRecord.landParcels?.length > 0 && (
+                {/* Section 3: Title Flow Events */}
+                {viewingRecord.titleFlowId && (
                   <div>
                     <h3
                       style={{
                         borderBottom: "2px solid #f1f5f9",
                         paddingBottom: 8,
                         color: "var(--navy)",
-                        margin: "0 0 16px 0",
+                        margin: "16px 0 16px 0",
                         fontSize: 15,
                         fontWeight: 700,
                       }}
                     >
-                      III. Land Parcels
+                      III. Title Flow Events ({viewingRecord.titleFlowId.events?.length || 0} Events)
                     </h3>
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontSize: 12,
-                        border: "1px solid #e2e8f0",
-                        borderRadius: 8,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <thead>
-                        <tr style={{ background: "#f8fafc" }}>
-                          <th
-                            style={{
-                              padding: "8px 12px",
-                              borderBottom: "1px solid #e2e8f0",
-                              textAlign: "left",
-                            }}
-                          >
-                            Survey No.
-                          </th>
-                          <th
-                            style={{
-                              padding: "8px 12px",
-                              borderBottom: "1px solid #e2e8f0",
-                              textAlign: "left",
-                            }}
-                          >
-                            Hissa No.
-                          </th>
-                          <th
-                            style={{
-                              padding: "8px 12px",
-                              borderBottom: "1px solid #e2e8f0",
-                              textAlign: "left",
-                            }}
-                          >
-                            Area
-                          </th>
-                          <th
-                            style={{
-                              padding: "8px 12px",
-                              borderBottom: "1px solid #e2e8f0",
-                              textAlign: "left",
-                            }}
-                          >
-                            Unit
-                          </th>
-                          <th
-                            style={{
-                              padding: "8px 12px",
-                              borderBottom: "1px solid #e2e8f0",
-                              textAlign: "left",
-                            }}
-                          >
-                            Remarks
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {viewingRecord.landParcels.map((p, idx) => (
-                          <tr
-                            key={idx}
-                            style={{
-                              borderBottom:
-                                idx < viewingRecord.landParcels.length - 1
-                                  ? "1px solid #f1f5f9"
-                                  : "none",
-                            }}
-                          >
-                            <td style={{ padding: "8px 12px" }}>
-                              {p.surveyNo || "—"}
-                            </td>
-                            <td style={{ padding: "8px 12px" }}>
-                              {p.hissaNo || "—"}
-                            </td>
-                            <td style={{ padding: "8px 12px" }}>
-                              {p.area || "—"}
-                            </td>
-                            <td style={{ padding: "8px 12px" }}>
-                              {p.unit || "—"}
-                            </td>
-                            <td style={{ padding: "8px 12px" }}>
-                              {p.remarks || "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    {viewingRecord.titleFlowId.events?.length > 0 ? (
+                      <div
+                        style={{
+                          maxHeight: 350,
+                          overflowY: "auto",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: 8,
+                        }}
+                      >
+                        <table
+                          style={{
+                            width: "100%",
+                            borderCollapse: "collapse",
+                            fontSize: 12,
+                            textAlign: "left",
+                          }}
+                        >
+                          <thead>
+                            <tr
+                              style={{
+                                background: "#f8fafc",
+                                position: "sticky",
+                                top: 0,
+                                zIndex: 1,
+                              }}
+                            >
+                              <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Evt.</th>
+                              <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Type</th>
+                              <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>From Party</th>
+                              <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>To Party</th>
+                              <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Document Type</th>
+                              <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Reg. No</th>
+                              <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Date</th>
+                              <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Area</th>
+                              <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Remarks</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {viewingRecord.titleFlowId.events.map(
+                              (evt, idx) => (
+                                <tr
+                                  key={idx}
+                                  style={{
+                                    borderBottom: "1px solid #f1f5f9",
+                                    background:
+                                      evt.currentOwner === "YES"
+                                        ? "#f0fdf4"
+                                        : "transparent",
+                                  }}
+                                >
+                                  <td style={{ padding: "10px 12px", fontWeight: 600 }}>{evt.eventNo}</td>
+                                  <td style={{ padding: "10px 12px" }}>
+                                    <span
+                                      style={{
+                                        background: "#f1f5f9",
+                                        padding: "2px 6px",
+                                        borderRadius: 4,
+                                        fontSize: 10,
+                                        fontWeight: 600,
+                                        color: "#475569",
+                                      }}
+                                    >
+                                      {evt.eventType}
+                                    </span>
+                                  </td>
+                                  <td style={{ padding: "10px 12px" }}>{evt.fromParty || "—"}</td>
+                                  <td style={{ padding: "10px 12px" }}>
+                                    {evt.toParty || "—"}
+                                    {evt.currentOwner === "YES" && (
+                                      <span
+                                        style={{
+                                          color: "#16a34a",
+                                          fontSize: 10,
+                                          fontWeight: 700,
+                                          marginLeft: 6,
+                                        }}
+                                      >
+                                        (Owner)
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td style={{ padding: "10px 12px" }}>{evt.documentType || "—"}</td>
+                                  <td style={{ padding: "10px 12px" }}>
+                                    {evt.registrationNo
+                                      ? `${evt.registrationNo} (${evt.sroName || ""})`
+                                      : "—"}
+                                  </td>
+                                  <td style={{ padding: "10px 12px" }}>{evt.documentDate || "—"}</td>
+                                  <td style={{ padding: "10px 12px" }}>{evt.areaTransferred || "—"}</td>
+                                  <td style={{ padding: "10px 12px", color: "#64748b" }}>{evt.remarks || "—"}</td>
+                                </tr>
+                              ),
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div style={{ padding: 12, color: "#64748b", fontStyle: "italic", fontSize: 13 }}>
+                        No events registered in this Title Flow.
+                      </div>
+                    )}
                   </div>
                 )}
+
+
 
                 {/* Section 4: Title Evidence */}
                 {viewingEvidence?.length > 0 && (
@@ -2272,9 +3004,9 @@ export default function TSRInitiation() {
                                         handleViewFile(d.filePath, d.name)
                                       }
                                       style={{
-                                        background: "#eff6ff",
-                                        color: "#1d4ed8",
-                                        border: "1px solid #bfdbfe",
+                                        background: "transparent",
+                                        color: "var(--black)",
+                                        border: "1px solid var(--black)",
                                         padding: "4px 8px",
                                         borderRadius: 4,
                                         cursor: "pointer",
@@ -2297,217 +3029,7 @@ export default function TSRInitiation() {
                   </div>
                 )}
 
-                {/* Section 6: Title Flow Files */}
-                {viewingRecord.titleFlowId && (
-                  <div>
-                    <h3
-                      style={{
-                        borderBottom: "2px solid #f1f5f9",
-                        paddingBottom: 8,
-                        color: "var(--navy)",
-                        margin: "0 0 16px 0",
-                        fontSize: 15,
-                        fontWeight: 700,
-                      }}
-                    >
-                      VI. Title Flow Events (
-                      {viewingRecord.titleFlowId.events?.length || 0} Events)
-                    </h3>
-                    {viewingRecord.titleFlowId.events?.length > 0 ? (
-                      <div
-                        style={{
-                          maxHeight: 350,
-                          overflowY: "auto",
-                          border: "1px solid #e2e8f0",
-                          borderRadius: 8,
-                        }}
-                      >
-                        <table
-                          style={{
-                            width: "100%",
-                            borderCollapse: "collapse",
-                            fontSize: 12,
-                            textAlign: "left",
-                          }}
-                        >
-                          <thead>
-                            <tr
-                              style={{
-                                background: "#f8fafc",
-                                position: "sticky",
-                                top: 0,
-                                zIndex: 1,
-                              }}
-                            >
-                              <th
-                                style={{
-                                  padding: "10px 12px",
-                                  borderBottom: "1px solid #e2e8f0",
-                                }}
-                              >
-                                Evt.
-                              </th>
-                              <th
-                                style={{
-                                  padding: "10px 12px",
-                                  borderBottom: "1px solid #e2e8f0",
-                                }}
-                              >
-                                Type
-                              </th>
-                              <th
-                                style={{
-                                  padding: "10px 12px",
-                                  borderBottom: "1px solid #e2e8f0",
-                                }}
-                              >
-                                From Party
-                              </th>
-                              <th
-                                style={{
-                                  padding: "10px 12px",
-                                  borderBottom: "1px solid #e2e8f0",
-                                }}
-                              >
-                                To Party
-                              </th>
-                              <th
-                                style={{
-                                  padding: "10px 12px",
-                                  borderBottom: "1px solid #e2e8f0",
-                                }}
-                              >
-                                Document Type
-                              </th>
-                              <th
-                                style={{
-                                  padding: "10px 12px",
-                                  borderBottom: "1px solid #e2e8f0",
-                                }}
-                              >
-                                Reg. No
-                              </th>
-                              <th
-                                style={{
-                                  padding: "10px 12px",
-                                  borderBottom: "1px solid #e2e8f0",
-                                }}
-                              >
-                                Date
-                              </th>
-                              <th
-                                style={{
-                                  padding: "10px 12px",
-                                  borderBottom: "1px solid #e2e8f0",
-                                }}
-                              >
-                                Area
-                              </th>
-                              <th
-                                style={{
-                                  padding: "10px 12px",
-                                  borderBottom: "1px solid #e2e8f0",
-                                }}
-                              >
-                                Remarks
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {viewingRecord.titleFlowId.events.map(
-                              (evt, idx) => (
-                                <tr
-                                  key={idx}
-                                  style={{
-                                    borderBottom: "1px solid #f1f5f9",
-                                    background:
-                                      evt.currentOwner === "YES"
-                                        ? "#f0fdf4"
-                                        : "transparent",
-                                  }}
-                                >
-                                  <td
-                                    style={{
-                                      padding: "10px 12px",
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    {evt.eventNo}
-                                  </td>
-                                  <td style={{ padding: "10px 12px" }}>
-                                    <span
-                                      style={{
-                                        background: "#f1f5f9",
-                                        padding: "2px 6px",
-                                        borderRadius: 4,
-                                        fontSize: 10,
-                                        fontWeight: 600,
-                                        color: "#475569",
-                                      }}
-                                    >
-                                      {evt.eventType}
-                                    </span>
-                                  </td>
-                                  <td style={{ padding: "10px 12px" }}>
-                                    {evt.fromParty || "—"}
-                                  </td>
-                                  <td style={{ padding: "10px 12px" }}>
-                                    {evt.toParty || "—"}
-                                    {evt.currentOwner === "YES" && (
-                                      <span
-                                        style={{
-                                          color: "#16a34a",
-                                          fontSize: 10,
-                                          fontWeight: 700,
-                                          marginLeft: 6,
-                                        }}
-                                      >
-                                        (Owner)
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td style={{ padding: "10px 12px" }}>
-                                    {evt.documentType || "—"}
-                                  </td>
-                                  <td style={{ padding: "10px 12px" }}>
-                                    {evt.registrationNo
-                                      ? `${evt.registrationNo} (${evt.sroName || ""})`
-                                      : "—"}
-                                  </td>
-                                  <td style={{ padding: "10px 12px" }}>
-                                    {evt.documentDate || "—"}
-                                  </td>
-                                  <td style={{ padding: "10px 12px" }}>
-                                    {evt.areaTransferred || "—"}
-                                  </td>
-                                  <td
-                                    style={{
-                                      padding: "10px 12px",
-                                      color: "#64748b",
-                                    }}
-                                  >
-                                    {evt.remarks || "—"}
-                                  </td>
-                                </tr>
-                              ),
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          padding: 12,
-                          color: "#64748b",
-                          fontStyle: "italic",
-                          fontSize: 13,
-                        }}
-                      >
-                        No events registered in this Title Flow.
-                      </div>
-                    )}
-                  </div>
-                )}
+
               </div>
 
               {/* Modal Footer */}

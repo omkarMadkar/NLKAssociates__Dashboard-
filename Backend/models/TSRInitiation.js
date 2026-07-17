@@ -114,6 +114,16 @@ const TSRInitiationSchema = new mongoose.Schema(
         uploadedAt: { type: Date, default: Date.now },
       },
     ],
+
+    // Part 1.5 Uploaded Documents Checklist (New Section)
+    uploadedChecklist: [
+      {
+        name: { type: String, default: "" },
+        fileName: { type: String, default: "" },
+        filePath: { type: String, default: "" },
+        remarks: { type: String, default: "" },
+      },
+    ],
   },
   { timestamps: true },
 );
