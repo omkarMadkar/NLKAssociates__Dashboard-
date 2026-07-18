@@ -1,4 +1,10 @@
 const TSRInitiation = require('../models/TSRInitiation');
+const TSRDocumentList = require('../models/TSRDocumentsList');
+const TSRTitleEvidence = require('../models/TSRTitleEvidence');
+const TSRTitleFlow = require('../models/TSRTitleFlow');
+const TSROtherProvision = require('../models/TSROtherProvision');
+const TSRWaitingReport = require('../models/TSRWaitingReport');
+const TSRUploadedChecklist = require('../models/TSRUploadedChecklist');
 const { extractFromDocument } = require('../utils/pdfExtractor');
 const fs = require('fs');
 
@@ -59,6 +65,7 @@ const getTSRInitiations = async (req, res) => {
       .populate('otherProvisionId')
       .populate('waitingReportId')
       .populate('titleFlowId')
+      .populate('uploadedChecklistId')
       .sort({ createdAt: -1 });
     res.json({ success: true, data: records });
   } catch (err) {
@@ -72,7 +79,8 @@ const getTSRInitiationById = async (req, res) => {
     const record = await TSRInitiation.findById(req.params.id)
       .populate('otherProvisionId')
       .populate('waitingReportId')
-      .populate('titleFlowId');
+      .populate('titleFlowId')
+      .populate('uploadedChecklistId');
     if (!record) return res.status(404).json({ success: false, message: 'Record not found' });
     res.json({ success: true, data: record });
   } catch (err) {
@@ -93,7 +101,25 @@ const updateTSRInitiation = async (req, res) => {
 // 6. DELETE
 const deleteTSRInitiation = async (req, res) => {
   try {
-    await TSRInitiation.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+
+    const record = await TSRInitiation.findById(id);
+    if (!record) {
+      return res.status(404).json({ success: false, message: 'Record not found' });
+    }
+
+    // Cascade delete all related sub-documents so nothing is left orphaned in the DB
+    await Promise.all([
+      TSRDocumentList.deleteMany({ tsrId: id }),
+      TSRTitleEvidence.deleteMany({ tsrId: id }),
+      TSRTitleFlow.deleteMany({ tsrInitiationId: id }),
+      TSROtherProvision.deleteMany({ tsrInitiationId: id }),
+      TSRWaitingReport.deleteMany({ tsrInitiationId: id }),
+      TSRUploadedChecklist.deleteMany({ tsrInitiationId: id }),
+    ]);
+
+    await TSRInitiation.findByIdAndDelete(id);
+
     res.json({ success: true, message: 'Deleted successfully' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

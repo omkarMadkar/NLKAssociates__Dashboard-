@@ -349,13 +349,14 @@ export default function TSRInitiation() {
   };
 
   const [selectedRecordForDocs, setSelectedRecordForDocs] = useState(null);
+  const [viewingUploadedRecord, setViewingUploadedRecord] = useState(null);
 
   const handleUploadedChecklistFileUpload = async (index, file) => {
     if (!file) return;
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const response = await API.post("/tsr-waiting-report/upload", formData, {
+      const response = await API.post("/tsr-uploaded-checklist/upload", formData, {
         headers: {
           ...authHeader(),
           "Content-Type": "multipart/form-data",
@@ -406,6 +407,15 @@ export default function TSRInitiation() {
   const authHeader = () => ({
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   });
+
+  // Section 1.5 documents now live in their own linked collection (uploadedChecklistId).
+  // Fall back to the old embedded field for any records saved before this change.
+  const getChecklistDocs = (record) => {
+    if (record?.uploadedChecklistId?.documents?.length > 0) {
+      return record.uploadedChecklistId.documents;
+    }
+    return record?.uploadedChecklist || [];
+  };
 
   // ---------- FETCH RECORDS ----------
   useEffect(() => {
@@ -725,7 +735,9 @@ export default function TSRInitiation() {
       boundaryNorth: record.boundaryNorth || "",
       executiveMobile: record.executiveMobile || "",
       executiveEmail: record.executiveEmail || "",
-      uploadedChecklist: record.uploadedChecklist?.length > 0 ? record.uploadedChecklist : [
+      uploadedChecklist: record.uploadedChecklistId?.documents?.length > 0
+        ? record.uploadedChecklistId.documents
+        : record.uploadedChecklist?.length > 0 ? record.uploadedChecklist : [
         { name: "", fileName: "", filePath: "", remarks: "" },
         { name: "", fileName: "", filePath: "", remarks: "" },
         { name: "", fileName: "", filePath: "", remarks: "" },
@@ -834,8 +846,8 @@ export default function TSRInitiation() {
       const submitPayload = {
         ...form,
         landParcels: cleanedLandParcels,
-        uploadedChecklist: cleanedDocs,
       };
+      delete submitPayload.uploadedChecklist; // Section 1.5 now saved separately below
 
       delete submitPayload._id;
       delete submitPayload.createdAt;
@@ -845,17 +857,24 @@ export default function TSRInitiation() {
       let tsrId = editingRecordId;
 
       if (editingRecordId) {
-        // UPDATE existing record with Basic Info and Uploaded Documents Checklist
+        // UPDATE existing record with Basic Info
         await API.put(`/tsr-initiation/${editingRecordId}`, submitPayload, {
           headers: authHeader(),
         });
       } else {
-        // CREATE new record with Basic Info and Uploaded Documents Checklist
+        // CREATE new record with Basic Info
         const tsrResponse = await API.post("/tsr-initiation/create", submitPayload, {
           headers: authHeader(),
         });
         tsrId = tsrResponse.data.data._id;
       }
+
+      // Save Section 1.5 documents into their own linked collection
+      await API.post(
+        "/tsr-uploaded-checklist/save",
+        { tsrInitiationId: tsrId, documents: cleanedDocs },
+        { headers: authHeader() }
+      );
 
       // ✅ Set editing state immediately
       setIsEditing(true);
@@ -863,7 +882,7 @@ export default function TSRInitiation() {
 
       // Refresh records list — silently, without alerting on 404
       try {
-        const recordsRes = await API.get("/tsr-initiation", { headers: authHeader() });
+        const recordsRes = await API.get("/tsr-initiation/list", { headers: authHeader() });
         const updatedRecords = recordsRes.data.data || [];
         setRecords(updatedRecords);
 
@@ -914,11 +933,11 @@ export default function TSRInitiation() {
       const submitPayload = {
         ...form,
         landParcels: cleanedLandParcels,
-        uploadedChecklist: cleanedUploadedChecklist,
         otherProvisionId: form.otherProvisionId?._id || form.otherProvisionId || null,
         waitingReportId: form.waitingReportId?._id || form.waitingReportId || null,
         titleFlowId: form.titleFlowId?._id || form.titleFlowId || null,
       };
+      delete submitPayload.uploadedChecklist; // Section 1.5 now saved separately below
 
       delete submitPayload._id;
       delete submitPayload.createdAt;
@@ -938,6 +957,13 @@ export default function TSRInitiation() {
         });
         tsrId = tsrResponse.data.data._id;
       }
+
+      // STEP 1.5 - SAVE Section 1.5 checklist (in case it was filled but "Save Progress" was never clicked)
+      await API.post(
+        "/tsr-uploaded-checklist/save",
+        { tsrInitiationId: tsrId, documents: cleanedUploadedChecklist },
+        { headers: authHeader() }
+      );
 
       const isDocumentBlank = (doc) => {
         return (
@@ -1076,7 +1102,7 @@ export default function TSRInitiation() {
 
       // Refresh the records list
       try {
-        const recordsRes = await API.get("/tsr-initiation", { headers: authHeader() });
+        const recordsRes = await API.get("/tsr-initiation/list", { headers: authHeader() });
         const updatedRecords = recordsRes.data.data || [];
         setRecords(updatedRecords);
 
@@ -1096,7 +1122,9 @@ export default function TSRInitiation() {
           setSelectedRecordForDocs(savedRecord);
           setForm({
             ...savedRecord,
-            uploadedChecklist: savedRecord.uploadedChecklist?.length > 0 ? savedRecord.uploadedChecklist : [
+            uploadedChecklist: savedRecord.uploadedChecklistId?.documents?.length > 0
+              ? savedRecord.uploadedChecklistId.documents
+              : savedRecord.uploadedChecklist?.length > 0 ? savedRecord.uploadedChecklist : [
               { name: "", fileName: "", filePath: "", remarks: "" },
               { name: "", fileName: "", filePath: "", remarks: "" },
               { name: "", fileName: "", filePath: "", remarks: "" },
@@ -1148,9 +1176,46 @@ export default function TSRInitiation() {
     if (!window.confirm("Delete this TSR Initiation record?")) return;
     try {
       await API.delete(`/tsr-initiation/${id}`, { headers: authHeader() });
+      if (selectedRecordForDocs?._id === id) setSelectedRecordForDocs(null);
+      if (viewingUploadedRecord?._id === id) setViewingUploadedRecord(null);
+      if (editingRecordId === id) {
+        setIsEditing(false);
+        setEditingRecordId(null);
+      }
       fetchRecords();
     } catch (err) {
       console.error("Failed to delete", err);
+    }
+  };
+
+  // ---------- UPLOADED SECTION: VIEW (basic info + documents only) ----------
+  const handleViewUploaded = (record) => {
+    setViewingUploadedRecord(record);
+  };
+
+  // ---------- UPLOADED SECTION: EDIT (resume exactly at Section 1.5) ----------
+  const handleEditUploaded = async (record) => {
+    await handleEdit(record);
+    setActiveTab("uploadedChecklist");
+    showToast("Resumed from Section 1.5 — continue filling the form.", "success");
+  };
+
+  // ---------- UPLOADED SECTION: DELETE ----------
+  const handleDeleteUploaded = async (id) => {
+    if (!window.confirm("Delete this entry and all its uploaded documents? This cannot be undone.")) return;
+    try {
+      await API.delete(`/tsr-initiation/${id}`, { headers: authHeader() });
+      if (selectedRecordForDocs?._id === id) setSelectedRecordForDocs(null);
+      if (viewingUploadedRecord?._id === id) setViewingUploadedRecord(null);
+      if (editingRecordId === id) {
+        setIsEditing(false);
+        setEditingRecordId(null);
+      }
+      await fetchRecords();
+      showToast("Entry deleted successfully.", "success");
+    } catch (err) {
+      console.error("Failed to delete uploaded entry", err);
+      showToast(err.response?.data?.message || err.message || "Failed to delete entry.", "error");
     }
   };
 
@@ -1733,7 +1798,7 @@ export default function TSRInitiation() {
           >
             {activeRecordsTab === "records"
               ? `${records.filter(r => r.waitingReportId).length} records`
-              : `${records.filter(r => r.uploadedChecklist?.length > 0).length} with documents`}
+              : `${records.filter(r => (r.uploadedChecklistId?.documents?.length || r.uploadedChecklist?.length || 0) > 0).length} with documents`}
           </span>
         </div>
 
@@ -1912,7 +1977,7 @@ export default function TSRInitiation() {
             {(() => {
               // Filter all records that have at least one uploaded document
               const recordsWithDocs = records.filter(
-                (r) => r.uploadedChecklist && r.uploadedChecklist.length > 0
+                (r) => getChecklistDocs(r).length > 0
               );
 
               if (recordsWithDocs.length === 0) {
@@ -1931,7 +1996,7 @@ export default function TSRInitiation() {
                       <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, width: 150 }}>App ID</th>
                       <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600 }}>Applicant</th>
                       <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 600, width: 110 }}>Docs</th>
-                      <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 600, width: 110 }}>Actions</th>
+                      <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 600, width: 230 }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1978,31 +2043,72 @@ export default function TSRInitiation() {
                               fontWeight: 700,
                               border: "1px solid #d1d5db",
                             }}>
-                              {record.uploadedChecklist.length} file{record.uploadedChecklist.length !== 1 ? "s" : ""}
+                              {getChecklistDocs(record).length} file{getChecklistDocs(record).length !== 1 ? "s" : ""}
                             </span>
                           </td>
                           <td style={{ padding: "12px 14px", textAlign: "center" }}>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedRecordForDocs(
-                                  selectedRecordForDocs?._id === record._id ? null : record
-                                );
-                              }}
-                              style={{
-                                background: selectedRecordForDocs?._id === record._id ? "var(--black)" : "white",
-                                color: selectedRecordForDocs?._id === record._id ? "white" : "var(--black)",
-                                border: "1px solid var(--black)",
-                                padding: "5px 14px",
-                                borderRadius: 6,
-                                cursor: "pointer",
-                                fontSize: 12,
-                                fontWeight: 600,
-                              }}
-                            >
-                              {selectedRecordForDocs?._id === record._id ? "▲ Hide" : "▼ View"}
-                            </button>
+                            <div style={{ display: "inline-flex", gap: 6 }}>
+                              <button
+                                type="button"
+                                title="View basic info & documents"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewUploaded(record);
+                                }}
+                                style={{
+                                  background: "white",
+                                  color: "var(--black)",
+                                  border: "1px solid #cbd5e1",
+                                  padding: "5px 10px",
+                                  borderRadius: 6,
+                                  cursor: "pointer",
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                👁 View
+                              </button>
+                              <button
+                                type="button"
+                                title="Resume filling the form from Section 1.5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditUploaded(record);
+                                }}
+                                style={{
+                                  background: "white",
+                                  color: "#1d4ed8",
+                                  border: "1px solid #bfdbfe",
+                                  padding: "5px 10px",
+                                  borderRadius: 6,
+                                  cursor: "pointer",
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                ✎ Edit
+                              </button>
+                              <button
+                                type="button"
+                                title="Delete this entry permanently"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteUploaded(record._id);
+                                }}
+                                style={{
+                                  background: "white",
+                                  color: "#dc2626",
+                                  border: "1px solid #fecaca",
+                                  padding: "5px 10px",
+                                  borderRadius: 6,
+                                  cursor: "pointer",
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                🗑 Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
 
@@ -2021,7 +2127,7 @@ export default function TSRInitiation() {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {record.uploadedChecklist.map((doc, dIdx) => (
+                                  {getChecklistDocs(record).map((doc, dIdx) => (
                                     <tr
                                       key={dIdx}
                                       style={{
@@ -2077,6 +2183,338 @@ export default function TSRInitiation() {
           </div>
         )}
       </div>
+
+      {/* Uploaded Section — lightweight View modal (basic info + documents only) */}
+      {viewingUploadedRecord &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(15, 23, 42, 0.4)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 40,
+              boxSizing: "border-box",
+            }}
+            onClick={() => setViewingUploadedRecord(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "white",
+                borderRadius: 16,
+                boxShadow:
+                  "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
+                width: "100%",
+                maxWidth: 760,
+                maxHeight: "85vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                animation: "scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+            >
+              {/* Header */}
+              <div
+                style={{
+                  background: "var(--black)",
+                  padding: "20px 28px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  color: "white",
+                }}
+              >
+                <div>
+                  <h2 style={{ margin: 0, fontSize: 18, fontFamily: "Playfair Display" }}>
+                    Basic Info & Uploaded Documents — {viewingUploadedRecord.appId || "—"}
+                  </h2>
+                  <span style={{ fontSize: 12, opacity: 0.8 }}>
+                    Saved on{" "}
+                    {viewingUploadedRecord.updatedAt
+                      ? new Date(viewingUploadedRecord.updatedAt).toLocaleDateString("en-IN")
+                      : "—"}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setViewingUploadedRecord(null)}
+                  style={{
+                    background: "rgba(255,255,255,0.15)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: 32,
+                    height: 32,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 16,
+                    fontWeight: 700,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Body */}
+              <div style={{ padding: 28, overflowY: "auto", display: "flex", flexDirection: "column", gap: 28 }}>
+                <div>
+                  <h3
+                    style={{
+                      borderBottom: "2px solid #f1f5f9",
+                      paddingBottom: 8,
+                      color: "var(--navy)",
+                      margin: "0 0 16px 0",
+                      fontSize: 15,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Basic Info
+                  </h3>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "14px 24px",
+                      fontSize: 13,
+                    }}
+                  >
+                    <div>
+                      <strong>App ID:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.appId || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>TSR Reference No:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.refNo || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Branch:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.branch || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Initiation Date:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.initiationDate || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Applicant:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.applicant || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Co-Applicant:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.coApplicant || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Existing Owner:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.existingOwner || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Transaction Type:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.transactionType || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Bank Branch:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.bankBranch || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Municipal Property No:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.municipalPropertyNo || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>RCC Construction Area:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.rccConstructionArea || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Village:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.village || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Taluka:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.taluka || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>District:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.district || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Municipal Council:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.municipalCouncil || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Executive Mobile:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.executiveMobile || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Executive Email:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.executiveEmail || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Boundary East:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.boundaryEast || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Boundary West:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.boundaryWest || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Boundary South:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.boundarySouth || "—"}</span>
+                    </div>
+                    <div>
+                      <strong>Boundary North:</strong>{" "}
+                      <span style={{ color: "#475569" }}>{viewingUploadedRecord.boundaryNorth || "—"}</span>
+                    </div>
+                  </div>
+
+                  {(viewingUploadedRecord.entireLandDescription || viewingUploadedRecord.subjectPropertyDescription) && (
+                    <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                      {viewingUploadedRecord.entireLandDescription && (
+                        <div style={{ fontSize: 13 }}>
+                          <strong>Entire Land Description:</strong>{" "}
+                          <span style={{ color: "#475569" }}>{viewingUploadedRecord.entireLandDescription}</span>
+                        </div>
+                      )}
+                      {viewingUploadedRecord.subjectPropertyDescription && (
+                        <div style={{ fontSize: 13 }}>
+                          <strong>Subject Property Description:</strong>{" "}
+                          <span style={{ color: "#475569" }}>{viewingUploadedRecord.subjectPropertyDescription}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {viewingUploadedRecord.landParcels?.length > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <strong style={{ fontSize: 13 }}>Land Parcels:</strong>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, marginTop: 8, border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+                        <thead>
+                          <tr style={{ background: "#f8fafc" }}>
+                            <th style={{ padding: "6px 10px", textAlign: "left" }}>Survey No</th>
+                            <th style={{ padding: "6px 10px", textAlign: "left" }}>Hissa No</th>
+                            <th style={{ padding: "6px 10px", textAlign: "left" }}>Area</th>
+                            <th style={{ padding: "6px 10px", textAlign: "left" }}>Unit</th>
+                            <th style={{ padding: "6px 10px", textAlign: "left" }}>Remarks</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {viewingUploadedRecord.landParcels.map((p, pIdx) => (
+                            <tr key={pIdx} style={{ borderTop: "1px solid #e2e8f0" }}>
+                              <td style={{ padding: "6px 10px" }}>{p.surveyNo || "—"}</td>
+                              <td style={{ padding: "6px 10px" }}>{p.hissaNo || "—"}</td>
+                              <td style={{ padding: "6px 10px" }}>{p.area || "—"}</td>
+                              <td style={{ padding: "6px 10px" }}>{p.unit || "—"}</td>
+                              <td style={{ padding: "6px 10px" }}>{p.remarks || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h3
+                    style={{
+                      borderBottom: "2px solid #f1f5f9",
+                      paddingBottom: 8,
+                      color: "var(--navy)",
+                      margin: "0 0 16px 0",
+                      fontSize: 15,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Uploaded Documents (Section 1.5)
+                  </h3>
+                  {getChecklistDocs(viewingUploadedRecord).length === 0 ? (
+                    <div style={{ color: "var(--muted)", fontSize: 13 }}>No documents uploaded.</div>
+                  ) : (
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+                      <thead>
+                        <tr style={{ background: "#f8fafc" }}>
+                          <th style={{ padding: "8px 12px", textAlign: "left", width: 40 }}>Sr.</th>
+                          <th style={{ padding: "8px 12px", textAlign: "left" }}>Document Name</th>
+                          <th style={{ padding: "8px 12px", textAlign: "left" }}>File</th>
+                          <th style={{ padding: "8px 12px", textAlign: "left" }}>Remarks</th>
+                          <th style={{ padding: "8px 12px", textAlign: "center", width: 80 }}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {getChecklistDocs(viewingUploadedRecord).map((doc, dIdx) => (
+                          <tr key={dIdx} style={{ borderTop: "1px solid #e2e8f0" }}>
+                            <td style={{ padding: "8px 12px", color: "#64748b" }}>{dIdx + 1}</td>
+                            <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--navy)" }}>{doc.name || "—"}</td>
+                            <td style={{ padding: "8px 12px", color: "var(--muted)" }}>
+                              {doc.fileName ? `📎 ${doc.fileName}` : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>No file</span>}
+                            </td>
+                            <td style={{ padding: "8px 12px", color: "#64748b" }}>{doc.remarks || "—"}</td>
+                            <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                              {doc.filePath ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewFile(doc.filePath, doc.name)}
+                                  style={{
+                                    background: "transparent",
+                                    color: "var(--black)",
+                                    border: "1px solid var(--black)",
+                                    padding: "4px 8px",
+                                    borderRadius: 4,
+                                    cursor: "pointer",
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  👁 View
+                                </button>
+                              ) : (
+                                <span style={{ color: "#cbd5e1" }}>—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div
+                style={{
+                  padding: "16px 28px",
+                  borderTop: "1px solid #f1f5f9",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  background: "#fafafa",
+                }}
+              >
+                <button
+                  onClick={() => setViewingUploadedRecord(null)}
+                  style={{
+                    background: "var(--black)",
+                    color: "white",
+                    border: "none",
+                    padding: "10px 24px",
+                    borderRadius: 6,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {viewingRecord &&
         createPortal(

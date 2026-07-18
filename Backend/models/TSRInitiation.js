@@ -104,6 +104,13 @@ const TSRInitiationSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Section 1.5 - Uploaded Documents Checklist (now its own linked collection)
+    uploadedChecklistId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TSRUploadedChecklist",
+      default: null,
+    },
+
     // Uploaded documents tracking
     uploadedDocuments: [
       {
