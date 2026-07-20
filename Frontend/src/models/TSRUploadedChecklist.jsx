@@ -1,5 +1,21 @@
 import React from "react";
 
+// These 4 documents are always required for every TSR case, in this order.
+// Rows matching these names are locked (name can't be edited/removed) so
+// users can't accidentally rename or delete a standard checklist item —
+// they just upload the file against it.
+export const FIXED_DOCUMENT_NAMES = [
+  "E Challan",
+  "E Search Receipt",
+  "All Search Receipt",
+  "Final Search",
+];
+
+export const getDefaultUploadedChecklist = () => [
+  ...FIXED_DOCUMENT_NAMES.map((name) => ({ name, fileName: "", filePath: "", remarks: "" })),
+  { name: "", fileName: "", filePath: "", remarks: "" },
+];
+
 export default function TSRUploadedChecklist({
   documents = [],
   setDocuments,
@@ -43,6 +59,7 @@ export default function TSRUploadedChecklist({
   };
 
   const handleRemoveRow = (index) => {
+    if (FIXED_DOCUMENT_NAMES.includes(documents[index]?.name)) return; // fixed rows can't be removed
     setDocuments(documents.filter((_, i) => i !== index));
   };
 
@@ -106,20 +123,41 @@ export default function TSRUploadedChecklist({
                 </td>
               </tr>
             ) : (
-              documents.map((doc, index) => (
+              documents.map((doc, index) => {
+                const isFixed = FIXED_DOCUMENT_NAMES.includes(doc.name);
+                return (
                 <tr key={index} style={{ borderBottom: "1px solid #e2e8f0" }}>
                   <td style={{ padding: "10px", textAlign: "center", color: "#64748b", fontWeight: 500 }}>
                     {index + 1}
                   </td>
                   <td style={{ padding: "10px" }}>
-                    <input
-                      style={inputStyle}
-                      onFocus={handleInputFocus}
-                      onBlur={handleInputBlur}
-                      value={doc.name}
-                      onChange={(e) => handleDocChange(index, "name", e.target.value)}
-                      placeholder="e.g. Sale Deed, Mutation Copy..."
-                    />
+                    {isFixed ? (
+                      <div
+                        style={{
+                          ...inputStyle,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          background: "#f1f5f9",
+                          color: "#334155",
+                          fontWeight: 600,
+                          cursor: "not-allowed",
+                        }}
+                        title="This is a required standard document — name is fixed"
+                      >
+                        <span>{doc.name}</span>
+
+                      </div>
+                    ) : (
+                      <input
+                        style={inputStyle}
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
+                        value={doc.name}
+                        onChange={(e) => handleDocChange(index, "name", e.target.value)}
+                        placeholder="e.g. Sale Deed, Mutation Copy..."
+                      />
+                    )}
                   </td>
                   <td style={{ padding: "10px", textAlign: "center" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
@@ -153,6 +191,7 @@ export default function TSRUploadedChecklist({
                       <input
                         id={`file-upload-checklist-${index}`}
                         type="file"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp"
                         style={{ display: "none" }}
                         onChange={(e) => handleFileUpload(index, e.target.files[0])}
                       />
@@ -215,26 +254,29 @@ export default function TSRUploadedChecklist({
                     />
                   </td>
                   <td style={{ padding: "10px", textAlign: "center" }}>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveRow(index)}
-                      style={{
-                        background: "transparent",
-                        color: "#94a3b8",
-                        border: "none",
-                        cursor: "pointer",
-                        fontSize: 14,
-                        padding: "4px 8px",
-                        transition: "color 0.15s ease",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = "#94a3b8")}
-                    >
-                      ✕
-                    </button>
+                    
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveRow(index)}
+                        style={{
+                          background: "transparent",
+                          color: "#94a3b8",
+                          border: "none",
+                          cursor: "pointer",
+                          fontSize: 14,
+                          padding: "4px 8px",
+                          transition: "color 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "#94a3b8")}
+                      >
+                        ✕
+                      </button>
+                    
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

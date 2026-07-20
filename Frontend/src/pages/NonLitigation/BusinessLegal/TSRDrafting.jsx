@@ -140,7 +140,7 @@ export default function TSRDrafting() {
       console.log("DOCUMENT LIST:", data.data.documentList);
       console.log("TITLE FLOW:", data.data.titleFlow);
       console.log("TITLE EVIDENCE:", data.data.titleEvidence);
-      console.log("WAITING REPORT:", data.data.waitingReport);
+      console.log("VETTING REPORT:", data.data.waitingReport);
       console.log("OTHER PROVISION:", data.data.otherProvision);
     } catch (error) {
       console.error(error);
@@ -174,7 +174,7 @@ export default function TSRDrafting() {
       alert(
         draftType === "tsr"
           ? "✅ TSR Draft saved successfully!"
-          : "✅ Waiting Report Draft saved successfully!",
+          : "✅ Vetting Report Draft saved successfully!",
       );
     }, 800);
   };
@@ -334,7 +334,7 @@ export default function TSRDrafting() {
     const docTitle =
       draftType === "tsr"
         ? `TSR Scrutiny Report - ${refNo}`
-        : `Waiting Scrutiny Report - ${refNo}`;
+        : `Vetting Scrutiny Report - ${refNo}`;
 
     const win = window.open("", "_blank");
     win.document.write(`
@@ -554,12 +554,12 @@ export default function TSRDrafting() {
           >
             {draftType === "tsr"
               ? "TSR Legal Scrutiny Drafting"
-              : "Waiting Report Drafting"}
+              : "Vetting Report Drafting"}
           </h1>
           <p style={{ color: "var(--muted)", margin: "6px 0 0", fontSize: 14 }}>
             {draftType === "tsr"
               ? "Create, edit, and export high-fidelity Advocate Scrutiny Reports"
-              : "Create, edit, and export high-fidelity Advocate Scrutiny Waiting Reports"}
+              : "Create, edit, and export high-fidelity Advocate Scrutiny Vetting Reports"}
           </p>
         </div>
         <span
@@ -641,7 +641,7 @@ export default function TSRDrafting() {
           }}
         >
           <Clock size={16} />
-          Waiting Report Draft
+          Vetting Report Draft
         </button>
       </div>
 
@@ -686,7 +686,7 @@ export default function TSRDrafting() {
             )}
             {draftType === "tsr"
               ? "Create New TSR Draft"
-              : "Create New Waiting Report Draft"}
+              : "Create New Vetting Report Draft"}
           </h2>
           <span
             style={{
@@ -730,7 +730,7 @@ export default function TSRDrafting() {
               >
                 {draftType === "tsr"
                   ? "Select Case / Initialized TSR"
-                  : "Select Case / Waiting Report"}
+                  : "Select Case / Vetting Report"}
               </label>
               <select
                 className="form-control"
@@ -759,7 +759,7 @@ export default function TSRDrafting() {
               >
                 {draftType === "tsr"
                   ? "TSR Reference No."
-                  : "Waiting Report Reference No."}
+                  : "Vetting Report Reference No."}
               </label>
               <input
                 className="form-control"
@@ -846,9 +846,8 @@ export default function TSRDrafting() {
               >
                 {draftType === "tsr"
                   ? "TSR Draft Content"
-                  : "Waiting Report Draft Content"}
+                  : "Vetting Report Draft Content"}
               </label>
-              <span style={{ fontSize: 14 }}>📝</span>
             </div>
             <textarea
               className="form-control draft-editor-textarea"
@@ -857,7 +856,7 @@ export default function TSRDrafting() {
               placeholder={
                 draftType === "tsr"
                   ? "Click 'Generate Draft' to compile dynamically..."
-                  : "Click 'Generate Waiting Report Draft' to compile dynamically..."
+                  : "Click 'Generate Vetting Report Draft' to compile dynamically..."
               }
               rows={12}
             />
@@ -875,7 +874,7 @@ export default function TSRDrafting() {
                 ? "Generating Dynamic Draft..."
                 : draftType === "tsr"
                   ? "Generate Draft"
-                  : "Generate Waiting Report Draft"}
+                  : "Generate Vetting Report Draft"}
             </button>
             <button
               onClick={handleSave}
@@ -935,7 +934,7 @@ export default function TSRDrafting() {
           >
             {draftType === "tsr"
               ? "All TSR Drafts"
-              : "All Waiting Report Drafts"}
+              : "All Vetting Report Drafts"}
           </h2>
           <span
             style={{
@@ -965,12 +964,12 @@ export default function TSRDrafting() {
             >
               {draftType === "tsr"
                 ? "No TSR drafts yet"
-                : "No waiting report drafts yet"}
+                : "No Vetting report drafts yet"}
             </div>
             <div style={{ color: "var(--muted)", marginTop: 8, fontSize: 14 }}>
               {draftType === "tsr"
                 ? "Create your first TSR draft above."
-                : "Create your first waiting report draft above."}
+                : "Create your first vetting report draft above."}
             </div>
           </div>
         ) : (

@@ -8,7 +8,7 @@ import TSROtherProvisions from "../../../models/TSROtherProvision";
 import TSRWaitingReport from "../../../models/TSRWaitingReport";
 import TSRDocumentList from "../../../models/TSRDocumentList";
 import TSRTitleEvidence from "../../../models/TSRTitleEvidence";
-import TSRUploadedChecklist from "../../../models/TSRUploadedChecklist";
+import TSRUploadedChecklist, { FIXED_DOCUMENT_NAMES, getDefaultUploadedChecklist } from "../../../models/TSRUploadedChecklist";
 
 
 const INITIAL = {
@@ -46,13 +46,7 @@ const INITIAL = {
   executiveMobile: "",
   executiveEmail: "",
   uploadedDocuments: [],
-  uploadedChecklist: [
-    { name: "", fileName: "", filePath: "", remarks: "" },
-    { name: "", fileName: "", filePath: "", remarks: "" },
-    { name: "", fileName: "", filePath: "", remarks: "" },
-    { name: "", fileName: "", filePath: "", remarks: "" },
-    { name: "", fileName: "", filePath: "", remarks: "" },
-  ],
+  uploadedChecklist: getDefaultUploadedChecklist(),
 };
 
 const INITIAL_DOCUMENT_LIST = [
@@ -410,11 +404,20 @@ export default function TSRInitiation() {
 
   // Section 1.5 documents now live in their own linked collection (uploadedChecklistId).
   // Fall back to the old embedded field for any records saved before this change.
+  // Always shows the 4 fixed/required documents first (in order), then any custom ones after.
   const getChecklistDocs = (record) => {
-    if (record?.uploadedChecklistId?.documents?.length > 0) {
-      return record.uploadedChecklistId.documents;
-    }
-    return record?.uploadedChecklist || [];
+    const docs = record?.uploadedChecklistId?.documents?.length > 0
+      ? record.uploadedChecklistId.documents
+      : record?.uploadedChecklist || [];
+
+    return [...docs].sort((a, b) => {
+      const ai = FIXED_DOCUMENT_NAMES.indexOf(a.name);
+      const bi = FIXED_DOCUMENT_NAMES.indexOf(b.name);
+      if (ai === -1 && bi === -1) return 0; // both custom — keep relative order
+      if (ai === -1) return 1; // a is custom — goes after
+      if (bi === -1) return -1; // b is custom — a (fixed) goes first
+      return ai - bi; // both fixed — sort by fixed order
+    });
   };
 
   // ---------- FETCH RECORDS ----------
@@ -737,13 +740,7 @@ export default function TSRInitiation() {
       executiveEmail: record.executiveEmail || "",
       uploadedChecklist: record.uploadedChecklistId?.documents?.length > 0
         ? record.uploadedChecklistId.documents
-        : record.uploadedChecklist?.length > 0 ? record.uploadedChecklist : [
-        { name: "", fileName: "", filePath: "", remarks: "" },
-        { name: "", fileName: "", filePath: "", remarks: "" },
-        { name: "", fileName: "", filePath: "", remarks: "" },
-        { name: "", fileName: "", filePath: "", remarks: "" },
-        { name: "", fileName: "", filePath: "", remarks: "" },
-      ],
+        : record.uploadedChecklist?.length > 0 ? record.uploadedChecklist : getDefaultUploadedChecklist(),
     });
 
     // Fetch document list and title evidence checklist if they exist
@@ -1124,13 +1121,7 @@ export default function TSRInitiation() {
             ...savedRecord,
             uploadedChecklist: savedRecord.uploadedChecklistId?.documents?.length > 0
               ? savedRecord.uploadedChecklistId.documents
-              : savedRecord.uploadedChecklist?.length > 0 ? savedRecord.uploadedChecklist : [
-              { name: "", fileName: "", filePath: "", remarks: "" },
-              { name: "", fileName: "", filePath: "", remarks: "" },
-              { name: "", fileName: "", filePath: "", remarks: "" },
-              { name: "", fileName: "", filePath: "", remarks: "" },
-              { name: "", fileName: "", filePath: "", remarks: "" },
-            ],
+              : savedRecord.uploadedChecklist?.length > 0 ? savedRecord.uploadedChecklist : getDefaultUploadedChecklist(),
           });
         }
       } catch (_) { /* ignore if GET by ID fails */ }
@@ -1335,7 +1326,7 @@ export default function TSRInitiation() {
             { key: "documents", label: "III. Title Flow" },
             { key: "titleEvidence", label: "IV. Title Evidence" },
             { key: "otherProvisions", label: "V. Other Provisions" },
-            { key: "waitingReport", label: "VI. Waiting Report" },
+            { key: "waitingReport", label: "VI. Vetting Report" },
           ].map((t) => (
             <button
               key={t.key}

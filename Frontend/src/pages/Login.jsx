@@ -76,9 +76,11 @@ function Login() {
                 >
                   <option value="admin">Admin</option>
 
-                  <option value="staff">Staff</option>
+                  <option value="staff1">Staff 1</option>
 
-                  <option value="senior">Senior Advocate</option>
+                  <option value="staff2">Staff 2</option>
+
+                  <option value="staff3">Staff 3</option>
                 </select>
               </div>
 

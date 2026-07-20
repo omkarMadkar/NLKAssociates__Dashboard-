@@ -342,6 +342,20 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         >
           {collapsed ? "⤴" : "Logout"}
         </button>
+
+        {!collapsed && (
+          <div
+            style={{
+              marginTop: 14,
+              textAlign: "center",
+              color: "rgba(255,255,255,0.3)",
+              fontSize: 10,
+              letterSpacing: 0.3,
+            }}
+          >
+            Developed &amp; Maintained By CALYONIX INFOTECH
+          </div>
+        )}
       </div>
     </div>
   );
