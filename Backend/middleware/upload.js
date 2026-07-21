@@ -25,6 +25,6 @@ const fileFilter = (req, file, cb) => {
   else cb(new Error('Only PDF, DOC/DOCX, XLS/XLSX, JPG, PNG, and WEBP files are allowed'), false);
 };
 
-const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage, fileFilter, limits: { fileSize: 1024 * 1024 * 1024 } });
 
 module.exports = upload;

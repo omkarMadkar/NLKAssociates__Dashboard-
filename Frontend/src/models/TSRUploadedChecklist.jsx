@@ -21,6 +21,7 @@ export default function TSRUploadedChecklist({
   setDocuments,
   handleFileUpload,
   handleViewFile,
+  uploadStatus = {},
 }) {
   const inputStyle = {
     padding: "8px 12px",
@@ -125,6 +126,9 @@ export default function TSRUploadedChecklist({
             ) : (
               documents.map((doc, index) => {
                 const isFixed = FIXED_DOCUMENT_NAMES.includes(doc.name);
+                const rowUpload = uploadStatus[index]; // { percent, status: 'uploading' } | undefined
+                const isUploading = rowUpload?.status === "uploading";
+
                 return (
                 <tr key={index} style={{ borderBottom: "1px solid #e2e8f0" }}>
                   <td style={{ padding: "10px", textAlign: "center", color: "#64748b", fontWeight: 500 }}>
@@ -146,7 +150,20 @@ export default function TSRUploadedChecklist({
                         title="This is a required standard document — name is fixed"
                       >
                         <span>{doc.name}</span>
-
+                        <span
+                          style={{
+                            fontSize: 9,
+                            color: "#64748b",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                            background: "#e2e8f0",
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                          }}
+                        >
+                          Fixed
+                        </span>
                       </div>
                     ) : (
                       <input
@@ -160,57 +177,105 @@ export default function TSRUploadedChecklist({
                     )}
                   </td>
                   <td style={{ padding: "10px", textAlign: "center" }}>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                      <label
-                        htmlFor={`file-upload-checklist-${index}`}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          background: doc.fileName ? "#ecfdf5" : "white",
-                          color: doc.fileName ? "#047857" : "#475569",
-                          border: doc.fileName ? "1px solid #a7f3d0" : "1px solid #cbd5e1",
-                          padding: "5px 12px",
-                          borderRadius: 6,
-                          cursor: "pointer",
-                          fontSize: 11,
-                          fontWeight: 600,
-                          transition: "all 0.15s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = doc.fileName ? "#d1fae5" : "#f1f5f9";
-                          e.currentTarget.style.borderColor = doc.fileName ? "#6ee7b7" : "#94a3b8";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = doc.fileName ? "#ecfdf5" : "white";
-                          e.currentTarget.style.borderColor = doc.fileName ? "#a7f3d0" : "#cbd5e1";
-                        }}
-                      >
-                        {doc.fileName ? "✓ Selected" : "📎 Upload"}
-                      </label>
-                      <input
-                        id={`file-upload-checklist-${index}`}
-                        type="file"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp"
-                        style={{ display: "none" }}
-                        onChange={(e) => handleFileUpload(index, e.target.files[0])}
-                      />
-                      {doc.fileName && (
+                    {isUploading ? (
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, minWidth: 110 }}>
                         <div
                           style={{
-                            fontSize: 9,
-                            color: "#64748b",
-                            maxWidth: 120,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
+                            fontSize: 10,
+                            fontWeight: 600,
+                            color: "#2563eb",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
                           }}
-                          title={doc.fileName}
                         >
-                          {doc.fileName}
+                          <span
+                            style={{
+                              display: "inline-block",
+                              width: 10,
+                              height: 10,
+                              border: "2px solid #bfdbfe",
+                              borderTopColor: "#2563eb",
+                              borderRadius: "50%",
+                              animation: "checklist-spin 0.7s linear infinite",
+                            }}
+                          />
+                          Uploading… {rowUpload.percent}%
                         </div>
-                      )}
-                    </div>
+                        <div
+                          style={{
+                            width: "100%",
+                            height: 6,
+                            background: "#e2e8f0",
+                            borderRadius: 4,
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${rowUpload.percent}%`,
+                              height: "100%",
+                              background: "#2563eb",
+                              borderRadius: 4,
+                              transition: "width 0.2s ease",
+                            }}
+                          />
+                        </div>
+                        <style>{`@keyframes checklist-spin { to { transform: rotate(360deg); } }`}</style>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                        <label
+                          htmlFor={`file-upload-checklist-${index}`}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            background: doc.fileName ? "#ecfdf5" : "white",
+                            color: doc.fileName ? "#047857" : "#475569",
+                            border: doc.fileName ? "1px solid #a7f3d0" : "1px solid #cbd5e1",
+                            padding: "5px 12px",
+                            borderRadius: 6,
+                            cursor: "pointer",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            transition: "all 0.15s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = doc.fileName ? "#d1fae5" : "#f1f5f9";
+                            e.currentTarget.style.borderColor = doc.fileName ? "#6ee7b7" : "#94a3b8";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = doc.fileName ? "#ecfdf5" : "white";
+                            e.currentTarget.style.borderColor = doc.fileName ? "#a7f3d0" : "#cbd5e1";
+                          }}
+                        >
+                          {doc.fileName ? "✓ Selected" : "📎 Upload"}
+                        </label>
+                        <input
+                          id={`file-upload-checklist-${index}`}
+                          type="file"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp"
+                          style={{ display: "none" }}
+                          onChange={(e) => handleFileUpload(index, e.target.files[0])}
+                        />
+                        {doc.fileName && (
+                          <div
+                            style={{
+                              fontSize: 9,
+                              color: "#64748b",
+                              maxWidth: 120,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                            title={doc.fileName}
+                          >
+                            {doc.fileName}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: "10px", textAlign: "center" }}>
                     {doc.filePath ? (
@@ -254,7 +319,14 @@ export default function TSRUploadedChecklist({
                     />
                   </td>
                   <td style={{ padding: "10px", textAlign: "center" }}>
-                    
+                    {isFixed ? (
+                      <span
+                        style={{ color: "#cbd5e1", fontSize: 12, cursor: "not-allowed" }}
+                        title="Required document — can't be removed"
+                      >
+                        🔒
+                      </span>
+                    ) : (
                       <button
                         type="button"
                         onClick={() => handleRemoveRow(index)}
@@ -272,7 +344,7 @@ export default function TSRUploadedChecklist({
                       >
                         ✕
                       </button>
-                    
+                    )}
                   </td>
                 </tr>
                 );

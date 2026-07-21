@@ -345,15 +345,30 @@ export default function TSRInitiation() {
   const [selectedRecordForDocs, setSelectedRecordForDocs] = useState(null);
   const [viewingUploadedRecord, setViewingUploadedRecord] = useState(null);
 
+  // Tracks upload progress per checklist row: { [index]: { percent, status: 'uploading'|'error' } }
+  const [checklistUploadStatus, setChecklistUploadStatus] = useState({});
+
   const handleUploadedChecklistFileUpload = async (index, file) => {
     if (!file) return;
+    // Guard: ignore if this row is already mid-upload (prevents double-click/double-submit)
+    if (checklistUploadStatus[index]?.status === "uploading") return;
+
     const formData = new FormData();
     formData.append("file", file);
+
+    setChecklistUploadStatus((prev) => ({ ...prev, [index]: { percent: 0, status: "uploading" } }));
+
     try {
       const response = await API.post("/tsr-uploaded-checklist/upload", formData, {
         headers: {
           ...authHeader(),
           "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          const percent = progressEvent.total
+            ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            : 0;
+          setChecklistUploadStatus((prev) => ({ ...prev, [index]: { percent, status: "uploading" } }));
         },
       });
       if (response.data.success) {
@@ -367,9 +382,19 @@ export default function TSRInitiation() {
           return { ...prev, uploadedChecklist: updated };
         });
       }
+      setChecklistUploadStatus((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.message || "File Upload Failed");
+      setChecklistUploadStatus((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
     }
   };
 
@@ -1326,7 +1351,7 @@ export default function TSRInitiation() {
             { key: "documents", label: "III. Title Flow" },
             { key: "titleEvidence", label: "IV. Title Evidence" },
             { key: "otherProvisions", label: "V. Other Provisions" },
-            { key: "waitingReport", label: "VI. Vetting Report" },
+            { key: "waitingReport", label: "VI. Waiting Report" },
           ].map((t) => (
             <button
               key={t.key}
@@ -1369,6 +1394,7 @@ export default function TSRInitiation() {
               setDocuments={(docs) => setForm({ ...form, uploadedChecklist: docs })}
               handleFileUpload={handleUploadedChecklistFileUpload}
               handleViewFile={handleViewFile}
+              uploadStatus={checklistUploadStatus}
             />
           )}
 
